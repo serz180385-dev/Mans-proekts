@@ -1,0 +1,26 @@
+{
+    "Serz": {
+        "password": "123456",
+        "plate": "VR2010",
+        "balance": 19.0,
+        "is_ev": false
+    },
+    "serz": {
+        "password": "123456",
+        "plate": "VR2010",
+        "balance": 10.0,
+        "is_ev": false
+    },
+    "sinavskis": {
+        "password": "123456",
+        "plate": "МК5240",
+        "balance": 10.0,
+        "is_ev": false
+    },
+    "Zanna": {
+        "password": "53128",
+        "plate": "DZ6196",
+        "balance": 2.0,
+        "is_ev": false
+    }
+}

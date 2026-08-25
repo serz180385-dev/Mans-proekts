@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+    <meta charset="UTF-8">
+    <title>Autostāvvietas Karte</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f1f5f9; margin: 0; padding: 10px 20px; color: #1e293b; font-size: 14px; }
+        .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px 20px; border-radius: 10px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 15px; gap: 15px; }
+        .user-info-block { display: flex; flex-direction: column; gap: 2px; }
+        .user-info { font-size: 15px; font-weight: bold; }
+        .balance-info { font-size: 15px; color: #10b981; font-weight: bold; }
+
+        .topup-form { margin: 0; display: flex; gap: 6px; align-items: center; }
+        .btn-topup { background: #10b981; color: white; border: none; padding: 8px 14px; font-size: 13px; font-weight: bold; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        .btn-topup:hover { background: #059669; }
+
+        .right-controls { display: flex; align-items: center; gap: 12px; }
+        .btn-logout { color: #ef4444; text-decoration: none; border: 1px solid #ef4444; padding: 6px 12px; border-radius: 6px; transition: 0.2s; font-weight: bold; font-size: 13px; }
+        .btn-logout:hover { background: #ef4444; color: white; }
+
+        .main-container { max-width: 950px; margin: 0 auto; }
+        .alert { padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 15px; font-weight: bold; font-size: 13px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .alert-info { background: #e2e8f0; color: #334155; }
+
+        /* Единая сетка мест */
+        .parking-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin: 15px 0; }
+
+        .spot { background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 8px; text-align: center; position: relative; transition: all 0.3s ease; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); min-height: 95px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; }
+        .spot:hover { transform: translateY(-2px); box-shadow: 0 6px 10px -3px rgba(0,0,0,0.08); }
+
+        .spot.free-spot { border-top: 4px solid #10b981; }
+        .spot.occupied { border-top: 4px solid #ef4444; background: #fafafa; }
+
+        .spot.ev-spot.free-spot { border-top: 4px solid #3b82f6; }
+        .ev-badge { font-size: 9px; font-weight: bold; color: #3b82f6; background: #eff6ff; padding: 1px 6px; border-radius: 4px; border: 1px solid #bfdbfe; margin-bottom: 2px; }
+
+        .spot-num { font-size: 15px; font-weight: bold; color: #64748b; }
+
+        .status-badge { font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; margin: 3px 0; }
+        .status-badge.free { background: #dcfce7; color: #15803d; }
+        .status-badge.occupied { background: #fee2e2; color: #b91c1c; }
+        .status-badge.ev-free { background: #dbeafe; color: #1d4ed8; }
+
+        .plate-number { font-weight: bold; color: #334155; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; display: inline-block; font-size: 11px; border: 1px solid #e2e8f0; }
+        .time-info { font-size: 10px; color: #b91c1c; background: #fee2e2; border-radius: 4px; padding: 2px 4px; margin-top: 4px; display: block; width: 95%; text-align: center; font-weight: 500; }
+
+        /* Компактная резиновая сетка для нижней панели */
+        .controls {
+            background: white;
+            padding: 12px 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr) auto;
+            align-items: flex-end;
+            gap: 10px;
+            box-sizing: border-box;
+            width: 100%;
+        }
+        .control-group { display: flex; flex-direction: column; gap: 4px; width: 100%; }
+        .control-group label { font-size: 11px; font-weight: bold; color: #475569; }
+
+        select, button { padding: 6px 10px; font-size: 13px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; color: #1e293b; outline: none; }
+        select:focus { border-color: #3b82f6; }
+        select { width: 100%; cursor: pointer; }
+
+        /* Кнопка защищена от сжатия и всегда влезет в строку */
+        .btn-action {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            height: 33px;
+            transition: 0.2s;
+            padding: 0 20px;
+            margin-top: 0;
+            flex-shrink: 0;
+            white-space: nowrap;
+            display: inline-block;
+            font-size: 13px;
+        }
+        .btn-action:hover { background: #2563eb; }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Шапка -->
+        <div class="header">
+            <div class="user-info-block">
+                <div class="user-info">🚗 Auto numurs: <span style="color: #3b82f6;">{{ current_plate }}</span></div>
+                <div class="balance-info">💰 Balanss: <span>{{ "%.2f"|format(current_balance) }} €</span></div>
+            </div>
+
+            <div class="right-controls">
+                <form action="/topup" method="POST" class="topup-form">
+                    <input type="number" name="amount" min="1" step="0.5" placeholder="Summa €" required
+                           style="width: 100px; padding: 8px; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none;">
+                    <button type="submit" class="btn-topup">+ Papildināt</button>
+                </form>
+                {% if is_admin %}
+                    <a href="/admin" style="background: #64748b; color: white; text-decoration: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; font-size: 13px;">⚙️ Admin panelis</a>
+                {% endif %}
+                <a href="/logout" class="btn-logout">Iziet</a>
+            </div>
+        </div>
+
+        {% if msg %}
+            <div class="alert alert-info">{{ msg }}</div>
+        {% endif %}
+
+        {% if next_free_info %}
+            <div class="alert" style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a;">
+                ⚠️ {{ next_free_info }}
+            </div>
+        {% endif %}
+
+        <h3 style="text-align: center; color: #334155; margin-bottom: 20px; font-size: 20px;">Autostāvvietas Shēma</h3>
+
+        <!-- Единая сетка мест -->
+        <div class="parking-grid">
+            {% for i in range(1, 11) %}
+                {% set i_str = i|string %}
+                {% set spot_data = spots[i_str] %}
+                {% set status = spot_data.status if spot_data is mapping else spot_data %}
+                {% set is_free = status == true or status is sameas true %}
+                <div class="spot {% if is_free %}free-spot{% else %}occupied{% endif %}">
+                    <div class="spot-num">№ {{ i }}</div>
+                    <div class="status-badge {% if is_free %}free{% else %}occupied{% endif %}">
+                        {% if is_free %}Brīvs{% else %}Aizņemts{% endif %}
+                    </div>
+                    <div class="plate-number">
+                        {% if is_free %}—{% else %}{% if status.plate == current_plate %}{{ status.plate }}{% else %}Slēpts{% endif %}{% endif %}
+                    </div>
+                    {% if not is_free %}
+                        <div class="time-info">
+                            Līdz: {% if ' ' in status.ends_at %}{{ status.ends_at.split(' ')[1] }}{% else %}{{ status.ends_at }}{% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+
+            {% for i in range(11, 16) %}
+                {% set i_str = i|string %}
+                {% set spot_data = spots[i_str] %}
+                {% set status = spot_data.status if spot_data is mapping else spot_data %}
+                {% set is_free = status == true or status is sameas true %}
+                <div class="spot ev-spot {% if is_free %}free-spot{% else %}occupied{% endif %}">
+                    <div class="ev-badge">⚡ EV CHARGE</div>
+                    <div class="spot-num">№ {{ i }}</div>
+                    <div class="status-badge {% if is_free %}ev-free{% else %}occupied{% endif %}">
+                        {% if is_free %}Brīvs{% else %}Aizņemts{% endif %}
+                    </div>
+                    <div class="plate-number">
+                        {% if is_free %}—{% else %}{% if status.plate == current_plate %}{{ status.plate }}{% else %}Slēpts{% endif %}{% endif %}
+                    </div>
+                    {% if not is_free %}
+                        <div class="time-info">
+                            Līdz: {% if ' ' in status.ends_at %}{{ status.ends_at.split(' ')[1] }}{% else %}{{ status.ends_at }}{% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+
+         <!-- Кнопка и меню в один ряд -->
+        <form action="/" method="POST" class="controls">
+            <div class="control-group">
+                <label>Izvēlieties vietu:</label>
+                <select name="spot_number" required>
+                    <option value="" disabled selected>— Vieta —</option>
+                    {% for i in range(1, 16) %}
+                        <option value="{{ i }}">Vieta №{{ i }} {% if i >= 11 %}(EV Uzlāde){% endif %}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Darbība:</label>
+                <select name="action" required>
+                    <option value="book" selected>Rezervēt</option>
+                    <option value="free">Atbrīvot</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Termiņš:</label>
+                <select name="duration">
+                    <option value="1">1 stunda (2.00 €)</option>
+                    <option value="2">2 stundas (4.00 €)</option>
+                    <option value="3">3 stundas (6.00 €)</option>
+                    <option value="4">4 stundas (8.00 €)</option>
+                    <option value="8">8 stundas (16.00 €)</option>
+                    <option value="24">24 stundas (48.00 €)</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn-action">Izpildīt</button>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const actionSelect = document.querySelector('select[name="action"]');
+            const durationSelect = document.querySelector('select[name="duration"]');
+            if (actionSelect && durationSelect) {
+                function toggleDuration() {
+                    if (actionSelect.value === 'free') {
+                        durationSelect.disabled = true;
+                        durationSelect.style.backgroundColor = '#e2e8f0';
+                        durationSelect.style.cursor = 'not-allowed';
+                    } else {
+                        durationSelect.disabled = false;
+                        durationSelect.style.backgroundColor = '#ffffff';
+                        durationSelect.style.cursor = 'pointer';
+                    }
+                }
+                actionSelect.addEventListener('change', toggleDuration);
+                toggleDuration();
+            }
+
+            const alertBox = document.querySelector('.alert-info');
+            if (alertBox) {
+                setTimeout(function() {
+                    alertBox.style.transition = "opacity 0.8s ease, margin 0.8s ease, padding 0.8s ease, height 0.8s ease";
+                    alertBox.style.opacity = "0";
+                    setTimeout(function() { alertBox.style.display = "none"; }, 800);
+                }, 5000);
+            }
+        });
+    </script>
+</body>
+</html>

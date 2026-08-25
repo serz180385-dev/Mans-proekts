@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+    <meta charset="UTF-8">
+    <title>Autostāvvieta - Autorizācija</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 350px; }
+        h2 { text-align: center; color: #333; margin-bottom: 20px; }
+        input { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.2s; }
+        .btn-login { background: #007bff; color: white; }
+        .btn-login:hover { background: #0056b3; }
+        .btn-reg { background: #28a745; color: white; }
+        .btn-reg:hover { background: #218838; }
+        .error { color: #dc3545; background: #f8d7da; padding: 10px; border-radius: 6px; text-align: center; margin-bottom: 15px; font-size: 14px; }
+        .divider { border-top: 1px solid #eee; margin: 25px 0; text-align: center; position: relative; }
+        .divider span { position: absolute; top: -12px; background: white; padding: 0 10px; color: #888; left: 50%; transform: translateX(-50%); font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Autostāvvieta</h2>
+
+        <!-- Вывод ошибок авторизации/регистрации -->
+        {% if error %}
+            <div class="error">{{ error }}</div>
+        {% endif %}
+
+        <!-- Форма Входа -->
+        <form action="/login" method="POST">
+            <input type="text" name="username" placeholder="Lietotājvārds" required>
+            <input type="password" name="password" placeholder="Parole" required>
+            <button type="submit" class="btn-login">Pieslēgties</button>
+        </form>
+
+        <div class="divider"><span>vai</span></div>
+
+        <!-- Форма Регистрации -->
+        <form action="/register" method="POST">
+            <input type="text" name="username" placeholder="Jauns lietotājvārds" required>
+            <input type="password" name="password" placeholder="Parole (min 4 simboli)" required>
+            <input type="text" name="plate" placeholder="Auto numurs (piem. VR2010)" required>
+            <button type="submit" class="btn-reg">Reģistrēties</button>
+        </form>
+    </div>
+</body>
+</html>

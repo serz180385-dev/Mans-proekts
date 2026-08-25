@@ -1,0 +1,221 @@
+from flask import Flask, render_template, request, redirect, session
+from database import load_data, save_data, load_users, save_users
+from datetime import datetime, timedelta
+
+app = Flask(__name__)
+app.secret_key = "super_secret_parking_key"
+
+# Тариф системы: 2 евро за один час парковки
+PRICE_PER_HOUR = 2.0
+
+
+@app.route('/')
+def home():
+    if "plate" not in session:
+        return redirect('/login')
+
+    spots = load_data()
+    users = load_users()
+
+    # Извлекаем баланс текущего авторизованного пользователя
+    current_balance = 0.0
+    for u_data in users.values():
+        if u_data["plate"] == session["plate"]:
+            current_balance = u_data.get("balance", 0.0)
+            break
+
+    # Высчитываем интеллектуальную подсказку о следующем свободном месте
+    earliest_spot = None
+    earliest_time = None
+    all_occupied = True
+
+    for spot_id, spot_val in spots.items():
+        if not isinstance(spot_val, dict):
+            status = spot_val
+        else:
+            status = spot_val.get("status", True)
+
+        if status is True:
+            all_occupied = False
+        elif isinstance(status, dict) and "ends_at" in status:
+            try:
+                spot_time = datetime.strptime(status["ends_at"], "%d.%m.%Y %H:%M")
+                if earliest_time is None or spot_time < earliest_time:
+                    earliest_time = spot_time
+                    earliest_spot = spot_id
+            except ValueError:
+                continue
+
+    next_free_info = None
+    if all_occupied and earliest_time:
+        next_free_info = f"Visas vietas ir aizņemtas. Tuvākā brīvā būs vieta №{earliest_spot} plkst. {earliest_time.strftime('%H:%M')}."
+
+    return render_template('index.html', spots=spots, current_plate=session["plate"],
+                           current_balance=current_balance, msg=request.args.get('msg'),
+                           next_free_info=next_free_info)
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username'].strip()
+        password = request.form['password'].strip()
+
+        users = load_users()
+        if username in users and users[username]["password"] == password:
+            session["plate"] = users[username]["plate"]
+            return redirect('/')
+        return render_template('login.html', error="Nepareizs lietotājvārds vai parole!")
+
+    return render_template('login.html')
+
+
+@app.route('/register', methods=['POST'])
+def register():
+    username = request.form['username'].strip()
+    password = request.form['password'].strip()
+    plate = request.form['plate'].strip().upper()
+
+    if not username or not password or not plate:
+        return render_template('login.html', error="Visi lauki ir obligāti!")
+
+    users = load_users()
+    if username in users:
+        return render_template('login.html', error="Šāds lietotājvārds jau eksistē!")
+
+    # Автоматическое начисление 10.00 EUR и флага авто новым профилям
+    users[username] = {"password": password, "plate": plate, "balance": 10.0, "is_ev": False}
+    save_users(users)
+
+    session["plate"] = plate
+    return redirect('/')
+
+
+@app.route('/', methods=['POST'])
+def handle_parking():
+    if "plate" not in session:
+        return redirect('/login')
+
+    current_plate = session["plate"]
+    spot_number = request.form.get('spot_number', '').strip()
+    action = request.form.get('action')
+
+    try:
+        duration = int(request.form.get('duration', 1))
+    except ValueError:
+        duration = 1
+
+    parking_spots = load_data()
+
+    if spot_number not in parking_spots:
+        return redirect('/?msg=Kluda: Sada vieta neegziste!')
+
+    car_already_parked = False
+    for spot_val in parking_spots.values():
+        if isinstance(spot_val, dict):
+            status = spot_val.get("status")
+            if isinstance(status, dict) and status.get("plate") == current_plate:
+                car_already_parked = True
+                break
+
+    users = load_users()
+    user_key = None
+    for username, u_data in users.items():
+        if u_data["plate"] == current_plate:
+            user_key = username
+            break
+
+    if action == 'book':
+        if car_already_parked:
+            return redirect('/?msg=Kluda: Jusu auto jau ir novietots!')
+
+        target_spot = parking_spots[spot_number]
+        is_user_ev = users[user_key].get("is_ev", False) if user_key else False
+
+        # Блокировка ДВС-автомобилей на зарядках EV
+        if isinstance(target_spot, dict) and target_spot.get("type") == "ev" and not is_user_ev:
+            return redirect('/?msg=Kluda: Vietas no 11 lidz 15 paredzetas tikai Elektroauto!')
+
+        current_status = target_spot.get("status", True) if isinstance(target_spot, dict) else target_spot
+
+        if current_status is True:
+            total_cost = duration * PRICE_PER_HOUR
+
+            if user_key:
+                current_balance = users[user_key].get("balance", 0.0)
+                if current_balance < total_cost:
+                    return redirect(
+                        f'/?msg=Kluda: Nepietiek lidzeklu! Vajag {total_cost:.2f} EUR, Jums ir {current_balance:.2f} EUR')
+
+                users[user_key]["balance"] = current_balance - total_cost
+                save_users(users)
+            else:
+                return redirect('/?msg=Kluda: Lietotajs nav atrasts!')
+
+            now = datetime.now()
+            ends_at = now + timedelta(hours=duration)
+
+            if not isinstance(parking_spots[spot_number], dict):
+                parking_spots[spot_number] = {"type": "regular"}
+
+            parking_spots[spot_number]["status"] = {
+                "plate": current_plate,
+                "booked_at": now.strftime("%d.%m.%Y %H:%M"),
+                "duration_hours": duration,
+                "ends_at": ends_at.strftime("%d.%m.%Y %H:%M")
+            }
+            save_data(parking_spots)
+            return redirect(f'/?msg=Veiksmigi rezervets! Samaksats: {total_cost:.2f} EUR')
+        else:
+            return redirect('/?msg=Vieta jau aiznemta!')
+
+    elif action == 'free':
+        target_spot = parking_spots[spot_number]
+        current_status = target_spot.get("status", True) if isinstance(target_spot, dict) else target_spot
+
+        if current_status is True:
+            return redirect('/?msg=Vieta jau ir briva!')
+        elif isinstance(current_status, dict) and current_status.get("plate") == current_plate:
+            if isinstance(parking_spots[spot_number], dict):
+                parking_spots[spot_number]["status"] = True
+            else:
+                parking_spots[spot_number] = True
+            save_data(parking_spots)
+            return redirect('/?msg=Vieta veiksmigi atbrivota!')
+        else:
+            return redirect('/?msg=Kluda: Jus nevarat atbrivot svesu auto!')
+
+
+@app.route('/topup', methods=['POST'])
+def topup():
+    if "plate" not in session:
+        return redirect('/login')
+
+    current_plate = session["plate"]
+
+    try:
+        amount = float(request.form.get('amount', 0))
+        if amount <= 0:
+            return redirect('/?msg=Kluda: Summai jabut lielakai par 0!')
+    except ValueError:
+        return redirect('/?msg=Kluda: Nepareizs summas formats!')
+
+    users = load_users()
+
+    for username, u_data in users.items():
+        if u_data["plate"] == current_plate:
+            users[username]["balance"] = u_data.get("balance", 0.0) + amount
+            save_users(users)
+            break
+
+    return redirect(f'/?msg=Balanss veiksmigi papildinats par {amount:.2f} EUR!')
+
+
+@app.route('/logout')
+def logout():
+    session.pop('plate', None)
+    return redirect('/login')
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
