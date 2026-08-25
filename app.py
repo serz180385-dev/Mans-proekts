@@ -11,18 +11,22 @@ PRICE_PER_HOUR = 2.0
 
 @app.route('/')
 def home():
-    if "plate" not in session:
+    # Проверяем авторизацию по имени пользователя
+    if "username" not in session:
         return redirect('/login')
 
+    username = session["username"]
     spots = load_data()
     users = load_users()
 
-    # Извлекаем баланс текущего авторизованного пользователя
-    current_balance = 0.0
-    for u_data in users.values():
-        if u_data["plate"] == session["plate"]:
-            current_balance = u_data.get("balance", 0.0)
-            break
+    # Извлекаем данные конкретного авторизованного пользователя
+    user_data = users.get(username)
+    if not user_data:
+        session.clear()
+        return redirect('/login')
+
+    current_plate = user_data["plate"]
+    current_balance = user_data.get("balance", 0.0)
 
     # Высчитываем интеллектуальную подсказку о следующем свободном месте
     earliest_spot = None
@@ -50,7 +54,7 @@ def home():
     if all_occupied and earliest_time:
         next_free_info = f"Visas vietas ir aizņemtas. Tuvākā brīvā būs vieta №{earliest_spot} plkst. {earliest_time.strftime('%H:%M')}."
 
-    return render_template('index.html', spots=spots, current_plate=session["plate"],
+    return render_template('index.html', spots=spots, current_plate=current_plate,
                            current_balance=current_balance, msg=request.args.get('msg'),
                            next_free_info=next_free_info)
 
@@ -63,7 +67,8 @@ def login():
 
         users = load_users()
         if username in users and users[username]["password"] == password:
-            session["plate"] = users[username]["plate"]
+            # Запоминаем уникальное имя пользователя, а не номер машины
+            session["username"] = username
             return redirect('/')
         return render_template('login.html', error="Nepareizs lietotājvārds vai parole!")
 
@@ -80,23 +85,31 @@ def register():
         return render_template('login.html', error="Visi lauki ir obligāti!")
 
     users = load_users()
-    if username in users:
+
+    # Проверка существования логина без учета регистра
+    if username.lower() in [u.lower() for u in users.keys()]:
         return render_template('login.html', error="Šāds lietotājvārds jau eksistē!")
 
-    # Автоматическое начисление 10.00 EUR и флага авто новым профилям
+    # Привязываем профиль. Совпадение номеров машин (plate) теперь разрешено!
     users[username] = {"password": password, "plate": plate, "balance": 10.0, "is_ev": False}
     save_users(users)
 
-    session["plate"] = plate
+    session["username"] = username
     return redirect('/')
 
 
 @app.route('/', methods=['POST'])
 def handle_parking():
-    if "plate" not in session:
+    if "username" not in session:
         return redirect('/login')
 
-    current_plate = session["plate"]
+    username = session["username"]
+    users = load_users()
+
+    if username not in users:
+        return redirect('/login')
+
+    current_plate = users[username]["plate"]
     spot_number = request.form.get('spot_number', '').strip()
     action = request.form.get('action')
 
@@ -110,6 +123,7 @@ def handle_parking():
     if spot_number not in parking_spots:
         return redirect('/?msg=Kluda: Sada vieta neegziste!')
 
+    # Проверка: занято ли место именно ЭТИМ госномером (работает для обоих водителей)
     car_already_parked = False
     for spot_val in parking_spots.values():
         if isinstance(spot_val, dict):
@@ -118,19 +132,12 @@ def handle_parking():
                 car_already_parked = True
                 break
 
-    users = load_users()
-    user_key = None
-    for username, u_data in users.items():
-        if u_data["plate"] == current_plate:
-            user_key = username
-            break
-
     if action == 'book':
         if car_already_parked:
             return redirect('/?msg=Kluda: Jusu auto jau ir novietots!')
 
         target_spot = parking_spots[spot_number]
-        is_user_ev = users[user_key].get("is_ev", False) if user_key else False
+        is_user_ev = users[username].get("is_ev", False)
 
         # Блокировка ДВС-автомобилей на зарядках EV
         if isinstance(target_spot, dict) and target_spot.get("type") == "ev" and not is_user_ev:
@@ -140,17 +147,15 @@ def handle_parking():
 
         if current_status is True:
             total_cost = duration * PRICE_PER_HOUR
+            current_balance = users[username].get("balance", 0.0)
 
-            if user_key:
-                current_balance = users[user_key].get("balance", 0.0)
-                if current_balance < total_cost:
-                    return redirect(
-                        f'/?msg=Kluda: Nepietiek lidzeklu! Vajag {total_cost:.2f} EUR, Jums ir {current_balance:.2f} EUR')
+            if current_balance < total_cost:
+                return redirect(
+                    f'/?msg=Kluda: Nepietiek lidzeklu! Vajag {total_cost:.2f} EUR, Jums ir {current_balance:.2f} EUR')
 
-                users[user_key]["balance"] = current_balance - total_cost
-                save_users(users)
-            else:
-                return redirect('/?msg=Kluda: Lietotajs nav atrasts!')
+            # Точечное списание баланса конкретного водителя
+            users[username]["balance"] = current_balance - total_cost
+            save_users(users)
 
             now = datetime.now()
             ends_at = now + timedelta(hours=duration)
@@ -175,6 +180,7 @@ def handle_parking():
 
         if current_status is True:
             return redirect('/?msg=Vieta jau ir briva!')
+        # Любой из водителей этой машины может освободить её парковку
         elif isinstance(current_status, dict) and current_status.get("plate") == current_plate:
             if isinstance(parking_spots[spot_number], dict):
                 parking_spots[spot_number]["status"] = True
@@ -188,10 +194,10 @@ def handle_parking():
 
 @app.route('/topup', methods=['POST'])
 def topup():
-    if "plate" not in session:
+    if "username" not in session:
         return redirect('/login')
 
-    current_plate = session["plate"]
+    username = session["username"]
 
     try:
         amount = float(request.form.get('amount', 0))
@@ -201,19 +207,17 @@ def topup():
         return redirect('/?msg=Kluda: Nepareizs summas formats!')
 
     users = load_users()
-
-    for username, u_data in users.items():
-        if u_data["plate"] == current_plate:
-            users[username]["balance"] = u_data.get("balance", 0.0) + amount
-            save_users(users)
-            break
+    if username in users:
+        # Деньги приходят строго тому, кто авторизован
+        users[username]["balance"] = users[username].get("balance", 0.0) + amount
+        save_users(users)
 
     return redirect(f'/?msg=Balanss veiksmigi papildinats par {amount:.2f} EUR!')
 
 
 @app.route('/logout')
 def logout():
-    session.pop('plate', None)
+    session.clear()
     return redirect('/login')
 
 
