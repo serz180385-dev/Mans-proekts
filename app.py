@@ -141,7 +141,12 @@ def handle_parking():
 
         # Блокировка ДВС-автомобилей на зарядках EV
         if isinstance(target_spot, dict) and target_spot.get("type") == "ev" and not is_user_ev:
-            return redirect('/?msg=Kluda: Vietas no 11 lidz 15 paredzetas tikai Elektroauto!')
+            return redirect('/?msg=Kluda: Vietas no 21 lidz 25 paredzetas tikai Elektroauto!')
+
+        # НОВАЯ БЛОКИРОВКА: Защита мест для инвалидов (1-5 места)
+        is_user_disabled = users[username].get("is_disabled", False)
+        if isinstance(target_spot, dict) and target_spot.get("type") == "disabled" and not is_user_disabled:
+            return redirect('/?msg=Kluda: Vietas no 1 lidz 5 paredzetas tikai cilvekiem ar ipasam vajadzibam!')
 
         current_status = target_spot.get("status", True) if isinstance(target_spot, dict) else target_spot
 

@@ -4,82 +4,78 @@
     <meta charset="UTF-8">
     <title>Autostāvvietas Karte</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f1f5f9; margin: 0; padding: 10px 20px; color: #1e293b; font-size: 14px; }
-        .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px 20px; border-radius: 10px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 15px; gap: 15px; }
-        .user-info-block { display: flex; flex-direction: column; gap: 2px; }
-        .user-info { font-size: 15px; font-weight: bold; }
-        .balance-info { font-size: 15px; color: #10b981; font-weight: bold; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f1f5f9; margin: 0; padding: 8px 15px; color: #1e293b; font-size: 13px; }
+        .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 8px 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); margin-bottom: 10px; gap: 15px; }
+        .user-info-block { display: flex; flex-direction: column; gap: 1px; }
+        .user-info { font-size: 14px; font-weight: bold; }
+        .balance-info { font-size: 14px; color: #10b981; font-weight: bold; }
 
-        .topup-form { margin: 0; display: flex; gap: 6px; align-items: center; }
-        .btn-topup { background: #10b981; color: white; border: none; padding: 8px 14px; font-size: 13px; font-weight: bold; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        .topup-form { margin: 0; display: flex; gap: 5px; align-items: center; }
+        .amount-input { width: 85px; padding: 6px; font-size: 13px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; }
+        .btn-topup { background: #10b981; color: white; border: none; padding: 6px 12px; font-size: 12px; font-weight: bold; border-radius: 6px; cursor: pointer; transition: 0.2s; }
         .btn-topup:hover { background: #059669; }
 
-        .right-controls { display: flex; align-items: center; gap: 12px; }
-        .btn-logout { color: #ef4444; text-decoration: none; border: 1px solid #ef4444; padding: 6px 12px; border-radius: 6px; transition: 0.2s; font-weight: bold; font-size: 13px; }
+        .right-controls { display: flex; align-items: center; gap: 10px; }
+        .btn-logout { color: #ef4444; text-decoration: none; border: 1px solid #ef4444; padding: 5px 10px; border-radius: 6px; transition: 0.2s; font-weight: bold; font-size: 12px; }
         .btn-logout:hover { background: #ef4444; color: white; }
 
-        .main-container { max-width: 950px; margin: 0 auto; }
-        .alert { padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 15px; font-weight: bold; font-size: 13px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .main-container { max-width: 900px; margin: 0 auto; }
+        .alert { padding: 8px; border-radius: 6px; text-align: center; margin-bottom: 10px; font-weight: bold; font-size: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .alert-info { background: #e2e8f0; color: #334155; }
 
-        /* Единая сетка мест */
-        .parking-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin: 15px 0; }
+        /* Компактная сетка мест (5 в ряд) */
+        .parking-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 10px 0; }
 
-        .spot { background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 8px; text-align: center; position: relative; transition: all 0.3s ease; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); min-height: 95px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; }
-        .spot:hover { transform: translateY(-2px); box-shadow: 0 6px 10px -3px rgba(0,0,0,0.08); }
+        /* Уменьшили min-height с 105px до 80px и padding с 10px до 6px */
+        .spot { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 5px; text-align: center; position: relative; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02); min-height: 80px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; box-sizing: border-box; }
+        .spot:hover { transform: translateY(-1px); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
 
-        .spot.free-spot { border-top: 4px solid #10b981; }
-        .spot.occupied { border-top: 4px solid #ef4444; background: #fafafa; }
+        .spot-num { font-size: 14px; font-weight: bold; color: #64748b; line-height: 1.2; }
 
-        .spot.ev-spot.free-spot { border-top: 4px solid #3b82f6; }
-        .ev-badge { font-size: 9px; font-weight: bold; color: #3b82f6; background: #eff6ff; padding: 1px 6px; border-radius: 4px; border: 1px solid #bfdbfe; margin-bottom: 2px; }
-
-        .spot-num { font-size: 15px; font-weight: bold; color: #64748b; }
-
-        .status-badge { font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; margin: 3px 0; }
+        .status-badge { font-size: 9px; font-weight: bold; padding: 1px 6px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; margin: 2px 0; }
         .status-badge.free { background: #dcfce7; color: #15803d; }
         .status-badge.occupied { background: #fee2e2; color: #b91c1c; }
-        .status-badge.ev-free { background: #dbeafe; color: #1d4ed8; }
+        .status-badge.disabled-free { background: #dbeafe; color: #1d4ed8; }
+        .status-badge.ev-free { background: #cffafe; color: #0e7490; }
 
-        .plate-number { font-weight: bold; color: #334155; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; display: inline-block; font-size: 11px; border: 1px solid #e2e8f0; }
-        .time-info { font-size: 10px; color: #b91c1c; background: #fee2e2; border-radius: 4px; padding: 2px 4px; margin-top: 4px; display: block; width: 95%; text-align: center; font-weight: 500; }
+        .plate-number { font-weight: bold; color: #334155; background: #f1f5f9; padding: 1px 4px; border-radius: 4px; display: inline-block; font-size: 10px; border: 1px solid #e2e8f0; }
+        .time-info { font-size: 9px; color: #b91c1c; background: #fee2e2; border-radius: 4px; padding: 1px 2px; margin-top: 2px; display: block; width: 95%; text-align: center; font-weight: 500; }
 
-        /* Компактная резиновая сетка для нижней панели */
+        /* Нижняя панель действий */
         .controls {
             background: white;
-            padding: 12px 15px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-            margin-top: 20px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            margin-top: 12px;
             display: grid;
             grid-template-columns: repeat(3, 1fr) auto;
             align-items: flex-end;
-            gap: 10px;
+            gap: 12px;
             box-sizing: border-box;
             width: 100%;
         }
-        .control-group { display: flex; flex-direction: column; gap: 4px; width: 100%; }
+        .control-group { display: flex; flex-direction: column; gap: 3px; width: 100%; }
         .control-group label { font-size: 11px; font-weight: bold; color: #475569; }
 
-        select, button { padding: 6px 10px; font-size: 13px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; color: #1e293b; outline: none; }
+        select, button { padding: 6px 10px; font-size: 12px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; color: #1e293b; outline: none; box-sizing: border-box; }
         select:focus { border-color: #3b82f6; }
-        select { width: 100%; cursor: pointer; }
+        select { width: 100%; cursor: pointer; height: 32px; }
 
-        /* Кнопка защищена от сжатия и всегда влезет в строку */
         .btn-action {
             background: #3b82f6;
             color: white;
             border: none;
             font-weight: bold;
             cursor: pointer;
-            height: 33px;
+            height: 32px;
             transition: 0.2s;
             padding: 0 20px;
-            margin-top: 0;
             flex-shrink: 0;
             white-space: nowrap;
             display: inline-block;
-            font-size: 13px;
+            font-size: 12px;
+            border-radius: 6px;
         }
         .btn-action:hover { background: #2563eb; }
     </style>
@@ -95,12 +91,11 @@
 
             <div class="right-controls">
                 <form action="/topup" method="POST" class="topup-form">
-                    <input type="number" name="amount" min="1" step="0.5" placeholder="Summa €" required
-                           style="width: 100px; padding: 8px; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none;">
+                    <input type="number" name="amount" min="1" step="0.5" placeholder="Summa €" required class="amount-input">
                     <button type="submit" class="btn-topup">+ Papildināt</button>
                 </form>
                 {% if is_admin %}
-                    <a href="/admin" style="background: #64748b; color: white; text-decoration: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; font-size: 13px;">⚙️ Admin panelis</a>
+                    <a href="/admin" style="background: #64748b; color: white; text-decoration: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 12px;">⚙️ Admin</a>
                 {% endif %}
                 <a href="/logout" class="btn-logout">Iziet</a>
             </div>
@@ -116,45 +111,69 @@
             </div>
         {% endif %}
 
-        <h3 style="text-align: center; color: #334155; margin-bottom: 20px; font-size: 20px;">Autostāvvietas Shēma</h3>
+        <h3 style="text-align: center; color: #334155; margin-bottom: 12px; font-size: 18px; margin-top: 5px;">Autostāvvietas Shēma</h3>
 
-        <!-- Единая сетка мест -->
+        <!-- Единая сетка мест (25 мест) -->
         <div class="parking-grid">
-            {% for i in range(1, 11) %}
+            {% for i in range(1, 26) %}
                 {% set i_str = i|string %}
                 {% set spot_data = spots[i_str] %}
-                {% set status = spot_data.status if spot_data is mapping else spot_data %}
-                {% set is_free = status == true or status is sameas true %}
-                <div class="spot {% if is_free %}free-spot{% else %}occupied{% endif %}">
-                    <div class="spot-num">№ {{ i }}</div>
-                    <div class="status-badge {% if is_free %}free{% else %}occupied{% endif %}">
-                        {% if is_free %}Brīvs{% else %}Aizņemts{% endif %}
-                    </div>
-                    <div class="plate-number">
-                        {% if is_free %}—{% else %}{% if status.plate == current_plate %}{{ status.plate }}{% else %}Slēpts{% endif %}{% endif %}
-                    </div>
-                    {% if not is_free %}
-                        <div class="time-info">
-                            Līdz: {% if ' ' in status.ends_at %}{{ status.ends_at.split(' ')[1] }}{% else %}{{ status.ends_at }}{% endif %}
-                        </div>
-                    {% endif %}
-                </div>
-            {% endfor %}
 
-            {% for i in range(11, 16) %}
-                {% set i_str = i|string %}
-                {% set spot_data = spots[i_str] %}
-                {% set status = spot_data.status if spot_data is mapping else spot_data %}
+                {% if spot_data is mapping %}
+                    {% set status = spot_data.get('status', true) %}
+                {% else %}
+                    {% set status = spot_data %}
+                {% endif %}
+
+                {# Жесткое разделение зон #}
+                {% if i <= 5 %}
+                    {% set spot_type = 'disabled' %}
+                {% elif i >= 21 %}
+                    {% set spot_type = 'ev' %}
+                {% else %}
+                    {% set spot_type = 'regular' %}
+                {% endif %}
+
                 {% set is_free = status == true or status is sameas true %}
-                <div class="spot ev-spot {% if is_free %}free-spot{% else %}occupied{% endif %}">
-                    <div class="ev-badge">⚡ EV CHARGE</div>
+
+                {# Определение инлайн-стилей для рамок и фона карточек #}
+                {% if not is_free %}
+                    {% set inline_style = "border-top: 3px solid #ef4444; background: #fafafa;" %}
+                {% else %}
+                    {% if spot_type == 'disabled' %}
+                        {% set inline_style = "border-top: 3px solid #3b82f6; background: #f0f6ff;" %}
+                    {% elif spot_type == 'ev' %}
+                        {% set inline_style = "border-top: 3px solid #06b6d4; background: #f0fdfa;" %}
+                    {% else %}
+                        {% set inline_style = "border-top: 3px solid #10b981; background: white;" %}
+                    {% endif %}
+                {% endif %}
+
+                <div class="spot" style="{{ inline_style }}">
+                    <!-- Индикатор типа зоны -->
+                    {% if spot_type == 'disabled' %}
+                        <div style="font-size: 8px; font-weight: bold; color: #3b82f6; background: #eff6ff; padding: 0px 4px; border-radius: 4px; border: 1px solid #bfdbfe; margin-bottom: 1px;">♿ Invalidu</div>
+                    {% elif spot_type == 'ev' %}
+                        <div style="font-size: 8px; font-weight: bold; color: #0891b2; background: #ecfeff; padding: 0px 4px; border-radius: 4px; border: 1px solid #a5f3fc; margin-bottom: 1px;">⚡ EV Charge</div>
+                    {% else %}
+                        <div style="font-size: 8px; color: #94a3b8; margin-bottom: 1px; font-weight: bold;">Standard</div>
+                    {% endif %}
+
                     <div class="spot-num">№ {{ i }}</div>
-                    <div class="status-badge {% if is_free %}ev-free{% else %}occupied{% endif %}">
+
+                    <div class="status-badge
+                        {% if is_free %}
+                            {% if spot_type == 'disabled' %}disabled-free
+                            {% elif spot_type == 'ev' %}ev-free
+                            {% else %}free{% endif %}
+                        {% else %}occupied{% endif %}">
                         {% if is_free %}Brīvs{% else %}Aizņemts{% endif %}
                     </div>
+
                     <div class="plate-number">
                         {% if is_free %}—{% else %}{% if status.plate == current_plate %}{{ status.plate }}{% else %}Slēpts{% endif %}{% endif %}
                     </div>
+
                     {% if not is_free %}
                         <div class="time-info">
                             Līdz: {% if ' ' in status.ends_at %}{{ status.ends_at.split(' ')[1] }}{% else %}{{ status.ends_at }}{% endif %}
@@ -164,71 +183,50 @@
             {% endfor %}
         </div>
 
-         <!-- Кнопка и меню в один ряд -->
-        <form action="/" method="POST" class="controls">
-            <div class="control-group">
-                <label>Izvēlieties vietu:</label>
-                <select name="spot_number" required>
-                    <option value="" disabled selected>— Vieta —</option>
-                    {% for i in range(1, 16) %}
-                        <option value="{{ i }}">Vieta №{{ i }} {% if i >= 11 %}(EV Uzlāde){% endif %}</option>
-                    {% endfor %}
-                </select>
-            </div>
+        <!-- Компактная нижняя панель управления бронированием -->
+        <div class="controls">
+            <form action="/" method="POST" style="display: contents;">
+                <!-- Выбор места -->
+                <div class="control-group">
+                    <label>Izvēlieties vietu:</label>
+                    <select name="spot_number" required>
+                        <option value="" selected disabled>&mdash; Vieta &mdash;</option>
+                        {% for i in range(1, 26) %}
+                            <option value="{{ i }}">
+                                № {{ i }}
+                                {% if i <= 5 %}(♿ Invalidu)
+                                {% elif i > 20 %}(⚡ EV)
+                                {% endif %}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-            <div class="control-group">
-                <label>Darbība:</label>
-                <select name="action" required>
-                    <option value="book" selected>Rezervēt</option>
-                    <option value="free">Atbrīvot</option>
-                </select>
-            </div>
+                <!-- Выбор действия -->
+                <div class="control-group">
+                    <label>Darbība:</label>
+                    <select name="action" required>
+                        <option value="book" selected>Rezervēt</option>
+                        <option value="free">Atbrīvot</option>
+                    </select>
+                </div>
 
-            <div class="control-group">
-                <label>Termiņš:</label>
-                <select name="duration">
-                    <option value="1">1 stunda (2.00 €)</option>
-                    <option value="2">2 stundas (4.00 €)</option>
-                    <option value="3">3 stundas (6.00 €)</option>
-                    <option value="4">4 stundas (8.00 €)</option>
-                    <option value="8">8 stundas (16.00 €)</option>
-                    <option value="24">24 stundas (48.00 €)</option>
-                </select>
-            </div>
+                <!-- Выбор времени -->
+                <div class="control-group">
+                    <label>Termiņš:</label>
+                    <select name="duration">
+                        <option value="1" selected>1 stunda (2.00 €)</option>
+                        <option value="2">2 stundas (4.00 €)</option>
+                        <option value="4">4 stundas (8.00 €)</option>
+                        <option value="8">8 stundas (16.00 €)</option>
+                        <option value="24">24 stundas (48.00 €)</option>
+                    </select>
+                </div>
 
-            <button type="submit" class="btn-action">Izpildīt</button>
-        </form>
+                <!-- Кнопка отправки -->
+                <button type="submit" class="btn-action">Izpildīt</button>
+            </form>
+        </div>
     </div>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            const actionSelect = document.querySelector('select[name="action"]');
-            const durationSelect = document.querySelector('select[name="duration"]');
-            if (actionSelect && durationSelect) {
-                function toggleDuration() {
-                    if (actionSelect.value === 'free') {
-                        durationSelect.disabled = true;
-                        durationSelect.style.backgroundColor = '#e2e8f0';
-                        durationSelect.style.cursor = 'not-allowed';
-                    } else {
-                        durationSelect.disabled = false;
-                        durationSelect.style.backgroundColor = '#ffffff';
-                        durationSelect.style.cursor = 'pointer';
-                    }
-                }
-                actionSelect.addEventListener('change', toggleDuration);
-                toggleDuration();
-            }
-
-            const alertBox = document.querySelector('.alert-info');
-            if (alertBox) {
-                setTimeout(function() {
-                    alertBox.style.transition = "opacity 0.8s ease, margin 0.8s ease, padding 0.8s ease, height 0.8s ease";
-                    alertBox.style.opacity = "0";
-                    setTimeout(function() { alertBox.style.display = "none"; }, 800);
-                }, 5000);
-            }
-        });
-    </script>
 </body>
 </html>
