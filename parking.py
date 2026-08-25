@@ -1,6 +1,5 @@
 import json
 from datetime import datetime, timedelta
-# Добавили импорт функций load_users и save_users для работы с кошельком
 from database import load_data, save_data, load_users, save_users
 
 # Стоимость одного часа парковки (2 евро)
@@ -25,18 +24,18 @@ def parking_menu(current_plate):
         elif choice == "3":
             free_spot(current_plate)
         elif choice == "4":
-            print("Atgriešanās sākuma izvēlnē...")
+            print("Atgriešanās sākuma izvēлnē...")
             break
         else:
             print("Kļūda: Nepareiza izvēle!")
 
 
 def show_spots(current_plate):
-    """1. Визуализация карты парковки в сетку 2x5 с выводом госномера, времени и подсказки"""
+    """1. Визуализация карты парковки в сетку с выводом госномера, времени и подсказки"""
     parking_spots = load_data()
-    print("\n" + "=" * 75)
-    print("             AUTOSTĀVVIETAS KARTE             ")
-    print("=" * 75)
+    print("\n" + "=" * 80)
+    print("                             AUTOSTĀVVIETAS KARTE                             ")
+    print("=" * 80)
 
     earliest_spot = None
     earliest_time = None
@@ -44,21 +43,28 @@ def show_spots(current_plate):
 
     def get_vis(spot_id):
         nonlocal earliest_spot, earliest_time, free_count
-        status = parking_spots.get(str(spot_id), True)
+        spot_val = parking_spots.get(str(spot_id), True)
+
+        # Вытаскиваем статус и тип места с поддержкой старых и новых структур
+        if isinstance(spot_val, dict):
+            status = spot_val.get("status", True)
+            is_ev = spot_val.get("type") == "ev"
+        else:
+            status = spot_val
+            is_ev = int(spot_id) > 10
+
+        spot_label = f"{spot_id}⚡" if is_ev else f"{spot_id} "
 
         if status is True:
             free_count += 1
             icon = "🟢"
             owner = ""
         else:
+            icon = "🔴"
             if isinstance(status, dict):
                 plate = status.get("plate", "???")
                 time_str = status.get("ends_at", "")
-
-                if " " in time_str:
-                    ends = time_str.split(" ")[1]
-                else:
-                    ends = time_str
+                ends = time_str.split(" ")[1] if " " in time_str else time_str
 
                 if plate == current_plate:
                     owner = f"({plate} līdz {ends})"
@@ -79,15 +85,16 @@ def show_spots(current_plate):
                 else:
                     owner = "(Aizņemts)"
 
-        space = " " if spot_id < 10 else ""
-        return f"{spot_id}{space}[{icon}]{owner:<26}"
+        return f"{spot_label:<3}[{icon}]{owner:<23}"
 
+    # Отрисовка 15 мест по 5 мест в ряд для красоты
     print("  " + " ".join(get_vis(i) for i in range(1, 6)))
-    print("  " + "—" * 71)
-    print("              < < <  C E L Š  > > >     ")
-    print("  " + "—" * 71)
-    print("  " + " ".join(get_vis(i) for i in range(6, 11)))
-    print("=" * 75)
+    print("  " + " " + " ".join(get_vis(i) for i in range(6, 11)))
+    print("  " + "—" * 76)
+    print("              ⚡ ⚡ ⚡  ELEKTROAUTO ZONA (11-15)  ⚡ ⚡ ⚡     ")
+    print("  " + "—" * 76)
+    print("  " + " ".join(get_vis(i) for i in range(11, 16)))
+    print("=" * 80)
 
     print(f" Kopā: {free_count} brīvas vietas no {len(parking_spots)}.")
 
@@ -95,26 +102,51 @@ def show_spots(current_plate):
         formatted_time = earliest_time.strftime("%H:%M")
         print(f" ⚠️ Visas vietas aizņemtas! Tuvākā brīvā būs vieta №{earliest_spot} plkst. {formatted_time}.")
 
-    print("=" * 75)
+    print("=" * 80)
 
 
 def book_spot(current_plate):
-    """2. Функция бронирования места по госномеру с проверкой баланса и списанием денег"""
+    """2. Функция бронирования места по госномеру с проверкой баланса и EV-типа"""
     try:
         parking_spots = load_data()
 
+        # Проверка: не припаркована ли машина уже где-то
         for spot_val in parking_spots.values():
-            if isinstance(spot_val, dict) and spot_val.get("plate") == current_plate:
+            if isinstance(spot_val, dict):
+                status = spot_val.get("status")
+                if isinstance(status, dict) and status.get("plate") == current_plate:
+                    print(f"❌ Kļūda: Automašīna {current_plate} jau ir novietota stāvvietā!")
+                    return
+            elif spot_val == current_plate:
                 print(f"❌ Kļūda: Automašīna {current_plate} jau ir novietota stāvvietā!")
                 return
 
-        spot_number = input("Ievadiet vietas numuru rezervēšanai (1-10): ").strip()
+        spot_number = input("Ievadiet vietas numuru rezervēšanai (1-15): ").strip()
 
         if spot_number not in parking_spots:
             print("❌ Kļūda: Šāda vieta neeksistē!")
             return
 
-        if parking_spots[spot_number] is True:
+        target_spot = parking_spots[spot_number]
+        users = load_users()
+
+        # Ищем текущего пользователя для проверки баланса и флага EV
+        user_key = None
+        for username, u_data in users.items():
+            if u_data["plate"] == current_plate:
+                user_key = username
+                break
+
+        is_user_ev = users[user_key].get("is_ev", False) if user_key else False
+
+        # Блокировка ДВС на зарядках EV
+        if isinstance(target_spot, dict) and target_spot.get("type") == "ev" and not is_user_ev:
+            print("❌ Kļūda: Vietas no 11 līdz 15 paredzētas tikai Elektroauto!")
+            return
+
+        current_status = target_spot.get("status", True) if isinstance(target_spot, dict) else target_spot
+
+        if current_status is True:
             try:
                 duration = int(input("Uz cik stundām rezervēt? (1-24): ").strip())
                 if duration < 1 or duration > 24:
@@ -122,14 +154,6 @@ def book_spot(current_plate):
             except ValueError:
                 print("❌ Kļūda: Nepareizs stundu skaits! Rezervācija atcelta.")
                 return
-
-            # --- БЛОК ПРОВЕРКИ И СПИСАНИЯ БАЛАНСА В КОНСОЛИ ---
-            users = load_users()
-            user_key = None
-            for username, u_data in users.items():
-                if u_data["plate"] == current_plate:
-                    user_key = username
-                    break
 
             total_cost = duration * PRICE_PER_HOUR
 
@@ -140,18 +164,20 @@ def book_spot(current_plate):
                     print(f"Vajag: {total_cost:.2f} EUR, Jūsu balāns: {current_balance:.2f} EUR")
                     return
 
-                # Списываем деньги с кошелька
+                # Списание средств
                 users[user_key]["balance"] = current_balance - total_cost
                 save_users(users)
             else:
-                print("❌ Kļūda: Lietotājs ar šādu auto numuru nav atrasts!")
+                print("❌ Kļūда: Lietotājs ar šādu auto numuru nav atrasts!")
                 return
-            # -------------------------------------------------
 
             now = datetime.now()
             ends_at = now + timedelta(hours=duration)
 
-            parking_spots[spot_number] = {
+            if not isinstance(parking_spots[spot_number], dict):
+                parking_spots[spot_number] = {"type": "regular"}
+
+            parking_spots[spot_number]["status"] = {
                 "plate": current_plate,
                 "booked_at": now.strftime("%d.%m.%Y %H:%M"),
                 "duration_hours": duration,
@@ -159,7 +185,7 @@ def book_spot(current_plate):
             }
             save_data(parking_spots)
             print(f"✅ Veiksmīgi! Samaksāts: {total_cost:.2f} EUR.")
-            print(f"Vieta №{spot_number} ir rezervēta līdz {parking_spots[spot_number]['ends_at']}.")
+            print(f"Vieta №{spot_number} ir rezervēta līdz {parking_spots[spot_number]['status']['ends_at']}.")
         else:
             print(f"⚠️ Atvainojiet, vieta №{spot_number} jau ir aizņemta.")
     except Exception as e:
@@ -167,22 +193,29 @@ def book_spot(current_plate):
 
 
 def free_spot(current_plate):
-    """3. Функция освобождения места по госномеру"""
+    """3. Функция безопасного освобождения места по госномеру"""
     try:
         parking_spots = load_data()
-        spot_number = input("Ievadiet vietas numuru, lai to atbrīvotu (1-10): ").strip()
+        spot_number = input("Ievadiet vietas numuru, lai to atbrīvotu (1-15): ").strip()
 
         if spot_number not in parking_spots:
             print("❌ Kļūda: Šāda vieta neeksistē!")
             return
 
-        if parking_spots[spot_number] is True:
+        target_spot = parking_spots[spot_number]
+        current_status = target_spot.get("status", True) if isinstance(target_spot, dict) else target_spot
+
+        if current_status is True:
             print(f"⚠️ Vieta №{spot_number} jau ir brīva!")
-        elif isinstance(parking_spots[spot_number], dict) and parking_spots[spot_number].get("plate") == current_plate:
-            parking_spots[spot_number] = True
+        elif isinstance(current_status, dict) and current_status.get("plate") == current_plate:
+            # Безопасно меняем статус, не ломая структуру словаря
+            if isinstance(parking_spots[spot_number], dict):
+                parking_spots[spot_number]["status"] = True
+            else:
+                parking_spots[spot_number] = True
             save_data(parking_spots)
             print(f"✅ Veiksmīgi! Jūs atbrīvojāt vietu №{spot_number}.")
         else:
-            print(f"❌ Kļūda: Jūs nevarat atbrīvot vietu №{spot_number}, jo to aizņēma cits auto!")
+            print(f"❌ Kļūda: Jūs nevarat atbrīvot vietu №{spot_number}, jo to aizņēма cits auto!")
     except Exception as e:
         print(f"❌ Kļūda: {e}")
