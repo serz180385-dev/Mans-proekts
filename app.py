@@ -81,6 +81,10 @@ def register():
     password = request.form['password'].strip()
     plate = request.form['plate'].strip().upper()
 
+    # Считывание чекбоксов специальных статусов из HTML-формы
+    is_ev = True if request.form.get('is_ev') == 'on' else False
+    is_disabled = True if request.form.get('is_disabled') == 'on' else False
+
     if not username or not password or not plate:
         return render_template('login.html', error="Visi lauki ir obligāti!")
 
@@ -90,8 +94,14 @@ def register():
     if username.lower() in [u.lower() for u in users.keys()]:
         return render_template('login.html', error="Šāds lietotājvārds jau eksistē!")
 
-    # Привязываем профиль. Совпадение номеров машин (plate) теперь разрешено!
-    users[username] = {"password": password, "plate": plate, "balance": 10.0, "is_ev": False}
+    # Привязываем профиль с поддержкой флагов EV и Инвалидности
+    users[username] = {
+        "password": password,
+        "plate": plate,
+        "balance": 10.0,
+        "is_ev": is_ev,
+        "is_disabled": is_disabled
+    }
     save_users(users)
 
     session["username"] = username
@@ -123,7 +133,7 @@ def handle_parking():
     if spot_number not in parking_spots:
         return redirect('/?msg=Kluda: Sada vieta neegziste!')
 
-    # Проверка: занято ли место именно ЭТИМ госномером (работает для обоих водителей)
+    # Проверка: занято ли место именно ЭТИМ госномером
     car_already_parked = False
     for spot_val in parking_spots.values():
         if isinstance(spot_val, dict):
@@ -143,7 +153,7 @@ def handle_parking():
         if isinstance(target_spot, dict) and target_spot.get("type") == "ev" and not is_user_ev:
             return redirect('/?msg=Kluda: Vietas no 21 lidz 25 paredzetas tikai Elektroauto!')
 
-        # НОВАЯ БЛОКИРОВКА: Защита мест для инвалидов (1-5 места)
+        # Защита мест для инвалидов (1-5 места)
         is_user_disabled = users[username].get("is_disabled", False)
         if isinstance(target_spot, dict) and target_spot.get("type") == "disabled" and not is_user_disabled:
             return redirect('/?msg=Kluda: Vietas no 1 lidz 5 paredzetas tikai cilvekiem ar ipasam vajadzibam!')
@@ -185,7 +195,6 @@ def handle_parking():
 
         if current_status is True:
             return redirect('/?msg=Vieta jau ir briva!')
-        # Любой из водителей этой машины может освободить её парковку
         elif isinstance(current_status, dict) and current_status.get("plate") == current_plate:
             if isinstance(parking_spots[spot_number], dict):
                 parking_spots[spot_number]["status"] = True
@@ -213,7 +222,6 @@ def topup():
 
     users = load_users()
     if username in users:
-        # Деньги приходят строго тому, кто авторизован
         users[username]["balance"] = users[username].get("balance", 0.0) + amount
         save_users(users)
 
