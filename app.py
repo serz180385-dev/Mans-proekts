@@ -90,12 +90,13 @@ def register():
 
     users = load_users()
 
-    # Проверка существования логина без учета регистра
-    if username.lower() in [u.lower() for u in users.keys()]:
+    # Исключаем создание дубликатов в разном регистре (Serz и serz теперь один аккаунт)
+    username_key = username.lower()
+    if username_key in [u.lower() for u in users.keys()]:
         return render_template('login.html', error="Šāds lietotājvārds jau eksistē!")
 
     # Привязываем профиль с поддержкой флагов EV и Инвалидности
-    users[username] = {
+    users[username_key] = {
         "password": password,
         "plate": plate,
         "balance": 10.0,
@@ -104,7 +105,7 @@ def register():
     }
     save_users(users)
 
-    session["username"] = username
+    session["username"] = username_key
     return redirect('/')
 
 
@@ -133,7 +134,7 @@ def handle_parking():
     if spot_number not in parking_spots:
         return redirect('/?msg=Kluda: Sada vieta neegziste!')
 
-    # Проверка: занято ли место именно ЭТИМ госномером
+    # Проверка: занято ли в принципе хоть одно место на парковке этой машиной
     car_already_parked = False
     for spot_val in parking_spots.values():
         if isinstance(spot_val, dict):
@@ -142,21 +143,26 @@ def handle_parking():
                 car_already_parked = True
                 break
 
+    # === ДЕЙСТВИЕ: БРОНИРОВАНИЕ ===
     if action == 'book':
         if car_already_parked:
             return redirect('/?msg=Kluda: Jusu auto jau ir novietots!')
 
         target_spot = parking_spots[spot_number]
-        is_user_ev = users[username].get("is_ev", False)
 
-        # Блокировка ДВС-автомобилей на зарядках EV
-        if isinstance(target_spot, dict) and target_spot.get("type") == "ev" and not is_user_ev:
-            return redirect('/?msg=Kluda: Vietas no 21 lidz 25 paredzetas tikai Elektroauto!')
-
-        # Защита мест для инвалидов (1-5 места)
+        # Защита мест для инвалидов (1-5 места) по типу и по номеру
         is_user_disabled = users[username].get("is_disabled", False)
-        if isinstance(target_spot, dict) and target_spot.get("type") == "disabled" and not is_user_disabled:
+        is_spot_disabled = (isinstance(target_spot, dict) and target_spot.get("type") == "disabled") or (
+                    1 <= int(spot_number) <= 5)
+        if is_spot_disabled and not is_user_disabled:
             return redirect('/?msg=Kluda: Vietas no 1 lidz 5 paredzetas tikai cilvekiem ar ipasam vajadzibam!')
+
+        # Блокировка ДВС-автомобилей на зарядках EV (21-25 места) по типу и по номеру
+        is_user_ev = users[username].get("is_ev", False)
+        is_spot_ev = (isinstance(target_spot, dict) and target_spot.get("type") == "ev") or (
+                    21 <= int(spot_number) <= 25)
+        if is_spot_ev and not is_user_ev:
+            return redirect('/?msg=Kluda: Vietas no 21 lidz 25 paredzetas tikai Elektroauto!')
 
         current_status = target_spot.get("status", True) if isinstance(target_spot, dict) else target_spot
 
@@ -175,8 +181,11 @@ def handle_parking():
             now = datetime.now()
             ends_at = now + timedelta(hours=duration)
 
+            # Восстанавливаем структуру типа данных при ручных сбросах базы
             if not isinstance(parking_spots[spot_number], dict):
-                parking_spots[spot_number] = {"type": "regular"}
+                spot_id_int = int(spot_number)
+                s_type = "disabled" if spot_id_int <= 5 else ("ev" if spot_id_int > 20 else "regular")
+                parking_spots[spot_number] = {"type": s_type}
 
             parking_spots[spot_number]["status"] = {
                 "plate": current_plate,
@@ -189,6 +198,7 @@ def handle_parking():
         else:
             return redirect('/?msg=Vieta jau aiznemta!')
 
+    # === ДЕЙСТВИЕ: ОСВОБОЖДЕНИЕ ===
     elif action == 'free':
         target_spot = parking_spots[spot_number]
         current_status = target_spot.get("status", True) if isinstance(target_spot, dict) else target_spot
@@ -204,6 +214,8 @@ def handle_parking():
             return redirect('/?msg=Vieta veiksmigi atbrivota!')
         else:
             return redirect('/?msg=Kluda: Jus nevarat atbrivot svesu auto!')
+
+    return redirect('/')
 
 
 @app.route('/topup', methods=['POST'])

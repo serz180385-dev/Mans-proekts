@@ -24,17 +24,18 @@ def parking_menu(current_plate):
         elif choice == "3":
             free_spot(current_plate)
         elif choice == "4":
-            print("Atgriešanās sākuma izvēлnē...")
+            print("Atgriešanās sākuma izvēlnē...")
             break
         else:
             print("Kļūda: Nepareiza izvēle!")
 
 
 def show_spots(current_plate):
-    """1. Визуализация карты парковки в сетку с выводом госномера, времени и подсказки (25 мест)"""
+    """Визуализация карты парковки в сетку с выводом госномера, времени и подсказки (25 мест)"""
     parking_spots = load_data()
     print("\n" + "=" * 80)
-    print("                             AUTOSTĀVVIETAS KARTE                             ")
+    print("                              P A R K N O W                                   ")
+    print("                         Viedā autostāvvietas karte                           ")
     print("=" * 80)
 
     earliest_spot = None
@@ -50,7 +51,6 @@ def show_spots(current_plate):
             spot_type = spot_val.get("type", "regular")
         else:
             status = spot_val
-            # Старая фолбек-логика на случай, если структуры в JSON еще не обновились
             spot_id_int = int(spot_id)
             if spot_id_int <= 5:
                 spot_type = "disabled"
@@ -101,7 +101,7 @@ def show_spots(current_plate):
 
         return f"{spot_label:<3}[{icon}]{owner:<23}"
 
-    # Красивая порядовая отрисовка 25 мест (по 5 штук в ряд)
+    # Порядовая отрисовка 25 мест (по 5 штук в ряд)
     print("              ♿ ♿ ♿  CILVĒKIEM AR ĪPAŠĀM VAJADZĪBĀM (1-5)  ♿ ♿ ♿     ")
     print("  " + " ".join(get_vis(i) for i in range(1, 6)))
     print("  " + "—" * 76)
@@ -124,7 +124,7 @@ def show_spots(current_plate):
 
 
 def book_spot(current_plate):
-    """2. Функция бронирования места по госномеру с проверкой баланса, EV и инвалидного статуса (1-25)"""
+    """Функция бронирования места по госномеру с проверкой баланса, EV и инвалидного статуса (1-25)"""
     try:
         parking_spots = load_data()
 
@@ -154,8 +154,12 @@ def book_spot(current_plate):
                 user_key = username
                 break
 
-        is_user_ev = users[user_key].get("is_ev", False) if user_key else False
-        is_user_disabled = users[user_key].get("is_disabled", False) if user_key else False
+        if not user_key:
+            print("❌ Kļūda: Lietotājs ar šādu auto numuru nav atrasts!")
+            return
+
+        is_user_ev = users[user_key].get("is_ev", False)
+        is_user_disabled = users[user_key].get("is_disabled", False)
 
         # Валидация зоны электромобилей (21-25)
         if isinstance(target_spot, dict) and target_spot.get("type") == "ev" and not is_user_ev:
@@ -179,25 +183,20 @@ def book_spot(current_plate):
                 return
 
             total_cost = duration * PRICE_PER_HOUR
+            current_balance = users[user_key].get("balance", 0.0)
 
-            if user_key:
-                current_balance = users[user_key].get("balance", 0.0)
-                if current_balance < total_cost:
-                    print(
-                        f"❌ Kļūda: Nepietiek līdzekļu! Vajag: {total_cost:.2f} EUR, Jums ir: {current_balance:.2f} EUR")
-                    return
-
-                users[user_key]["balance"] = current_balance - total_cost
-                save_users(users)
-            else:
-                print("❌ Kļūda: Lietotājs nav atrasts!")
+            if current_balance < total_cost:
+                print(f"❌ Kļūda: Nepietiek līdzekļu! Vajag: {total_cost:.2f} EUR, Jums ir: {current_balance:.2f} EUR")
                 return
+
+            # Списание средств со счета авторизованного пользователя
+            users[user_key]["balance"] = current_balance - total_cost
+            save_users(users)
 
             now = datetime.now()
             ends_at = now + timedelta(hours=duration)
 
             if not isinstance(parking_spots[spot_number], dict):
-                # На всякий случай сохраняем тип места при инициализации структуры
                 spot_id_int = int(spot_number)
                 s_type = "disabled" if spot_id_int <= 5 else ("ev" if spot_id_int > 20 else "regular")
                 parking_spots[spot_number] = {"type": s_type}
@@ -213,42 +212,16 @@ def book_spot(current_plate):
                 f"✅ Veiksmīgi! Samaksāts: {total_cost:.2f} EUR. Vieta №{spot_number} rezervēta līdz {ends_at.strftime('%H:%M')}.")
         else:
             print(f"⚠️ Atvainojiet, vieta №{spot_number} jau ir aizņemta.")
-    except Exception as e:
-        print(f"❌ Kļūda: {e}")
 
-                # Списание средств
-                users[user_key]["balance"] = current_balance - total_cost
-                save_users(users)
-            else:
-                print("❌ Kļūда: Lietotājs ar šādu auto numuru nav atrasts!")
-                return
-
-            now = datetime.now()
-            ends_at = now + timedelta(hours=duration)
-
-            if not isinstance(parking_spots[spot_number], dict):
-                parking_spots[spot_number] = {"type": "regular"}
-
-            parking_spots[spot_number]["status"] = {
-                "plate": current_plate,
-                "booked_at": now.strftime("%d.%m.%Y %H:%M"),
-                "duration_hours": duration,
-                "ends_at": ends_at.strftime("%d.%m.%Y %H:%M")
-            }
-            save_data(parking_spots)
-            print(f"✅ Veiksmīgi! Samaksāts: {total_cost:.2f} EUR.")
-            print(f"Vieta №{spot_number} ir rezervēta līdz {parking_spots[spot_number]['status']['ends_at']}.")
-        else:
-            print(f"⚠️ Atvainojiet, vieta №{spot_number} jau ir aizņemta.")
     except Exception as e:
         print(f"❌ Kļūda: {e}")
 
 
 def free_spot(current_plate):
-    """3. Функция безопасного освобождения места по госномеру"""
+    """Функция безопасного освобождения места по госномеру"""
     try:
         parking_spots = load_data()
-        spot_number = input("Ievadiet vietas numuru, lai to atbrīvotu (1-15): ").strip()
+        spot_number = input("Ievadiet vietas numuru, lai to atbrīvotu (1-25): ").strip()
 
         if spot_number not in parking_spots:
             print("❌ Kļūda: Šāda vieta neeksistē!")
@@ -260,7 +233,6 @@ def free_spot(current_plate):
         if current_status is True:
             print(f"⚠️ Vieta №{spot_number} jau ir brīva!")
         elif isinstance(current_status, dict) and current_status.get("plate") == current_plate:
-            # Безопасно меняем статус, не ломая структуру словаря
             if isinstance(parking_spots[spot_number], dict):
                 parking_spots[spot_number]["status"] = True
             else:
@@ -268,6 +240,6 @@ def free_spot(current_plate):
             save_data(parking_spots)
             print(f"✅ Veiksmīgi! Jūs atbrīvojāt vietu №{spot_number}.")
         else:
-            print(f"❌ Kļūda: Jūs nevarat atbrīvot vietu №{spot_number}, jo to aizņēма cits auto!")
+            print(f"❌ Kļūda: Jūs nevarat atbrīvot vietu №{spot_number}, jo to aizņēma cits auto!")
     except Exception as e:
         print(f"❌ Kļūda: {e}")

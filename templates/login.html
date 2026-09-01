@@ -2,47 +2,278 @@
 <html lang="lv">
 <head>
     <meta charset="UTF-8">
-    <title>Autostāvvieta - Autorizācija</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>ParkNow - Autostāvvieta</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 350px; }
-        h2 { text-align: center; color: #333; margin-bottom: 20px; }
-        input { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.2s; }
-        .btn-login { background: #007bff; color: white; }
-        .btn-login:hover { background: #0056b3; }
-        .btn-reg { background: #28a745; color: white; }
-        .btn-reg:hover { background: #218838; }
-        .error { color: #dc3545; background: #f8d7da; padding: 10px; border-radius: 6px; text-align: center; margin-bottom: 15px; font-size: 14px; }
-        .divider { border-top: 1px solid #eee; margin: 25px 0; text-align: center; position: relative; }
-        .divider span { position: absolute; top: -12px; background: white; padding: 0 10px; color: #888; left: 50%; transform: translateX(-50%); font-size: 14px; }
+        :root {
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --border: #e5e7eb;
+            --error-bg: #fee2e2;
+            --error-text: #991b1b;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            box-sizing: border-box;
+        }
+
+        /* Переключатель вкладок (Табы) */
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 2rem;
+        }
+
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 0.75rem;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+        }
+
+        .tab.active {
+            color: var(--accent);
+            border-bottom: 2px solid var(--accent);
+            margin-bottom: -2px;
+        }
+
+        .error-box {
+            background-color: var(--error-bg);
+            color: var(--error-text);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.4rem;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 1rem;
+            background-color: #f9fafb;
+            box-sizing: border-box;
+            transition: all 0.2s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: var(--accent);
+            background-color: #ffffff;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        .checkbox-group {
+            background-color: #f9fafb;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 0.25rem 0;
+        }
+
+        .checkbox-item:not(:last-child) {
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid #f3f4f6;
+            padding-bottom: 0.5rem;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            margin-right: 0.75rem;
+            accent-color: var(--accent);
+            width: 16px;
+            height: 16px;
+        }
+
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: var(--accent);
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            margin-top: 0.5rem;
+        }
+
+        button:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .footer-link {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .footer-link span {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .footer-link span:hover {
+            text-decoration: underline;
+        }
+
+        /* Управление видимостью форм */
+        .form-content {
+            display: none;
+        }
+
+        .form-content.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Autostāvvieta</h2>
 
-        <!-- Вывод ошибок авторизации/регистрации -->
-        {% if error %}
-            <div class="error">{{ error }}</div>
-        {% endif %}
-
-        <!-- Форма Входа -->
-        <form action="/login" method="POST">
-            <input type="text" name="username" placeholder="Lietotājvārds" required>
-            <input type="password" name="password" placeholder="Parole" required>
-            <button type="submit" class="btn-login">Pieslēgties</button>
-        </form>
-
-        <div class="divider"><span>vai</span></div>
-
-        <!-- Форма Регистрации -->
-        <form action="/register" method="POST">
-            <input type="text" name="username" placeholder="Jauns lietotājvārds" required>
-            <input type="password" name="password" placeholder="Parole (min 4 simboli)" required>
-            <input type="text" name="plate" placeholder="Auto numurs (piem. VR2010)" required>
-            <button type="submit" class="btn-reg">Reģistrēties</button>
-        </form>
+<div class="container">
+    <!-- Название системы ParkNow -->
+    <div style="text-align: center; margin-bottom: 1.5rem;">
+        <h1 style="margin: 0; font-size: 2.2rem; font-weight: 800; color: var(--accent); letter-spacing: -1px;">ParkNow</h1>
+        <p style="margin: 0.2rem 0 0 0; color: var(--text-muted); font-size: 0.9rem; font-weight: 500;">Viedā autostāvvietu sistēma</p>
     </div>
+
+    <!-- Вкладки сверху карточки -->
+    <div class="tabs">
+        <div id="tab-login" class="tab active" onclick="switchTab('login')">Ienākt</div>
+        <div id="tab-register" class="tab" onclick="switchTab('register')">Reģistrācija</div>
+    </div>
+
+    <!-- Вывод ошибок от Flask -->
+    {% if error %}
+        <div class="error-box">{{ error }}</div>
+    {% endif %}
+
+    <!-- ФОРМА АВТОРИЗАЦИИ -->
+    <div id="login-form" class="form-content active">
+        <form action="/login" method="POST">
+            <div class="form-group">
+                <label for="login-username">Lietotājvārds</label>
+                <input type="text" id="login-username" name="username" placeholder="Ievadiet lietotājvārdu" required autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label for="login-password">Parole</label>
+                <input type="password" id="login-password" name="password" placeholder="Ievadiet paroli" required>
+            </div>
+            <button type="submit">Ienākt</button>
+        </form>
+        <div class="footer-link">
+            Vēl neesat reģistrēts? <span onclick="switchTab('register')">Izveidot kontu</span>
+        </div>
+    </div>
+
+    <!-- ФОРМА РЕГИСТРАЦИИ -->
+    <div id="register-form" class="form-content">
+        <form action="/register" method="POST">
+            <div class="form-group">
+                <label for="reg-username">Lietotājvārds</label>
+                <input type="text" id="reg-username" name="username" placeholder="Piemēram, serz99" required autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label for="reg-password">Parole</label>
+                <input type="password" id="reg-password" name="password" placeholder="Vismaz 4 simboli" required>
+            </div>
+            <div class="form-group">
+                <label for="reg-plate">Automašīnas numurs</label>
+                <input type="text" id="reg-plate" name="plate" placeholder="Piemēрам, VR2010" required autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label>Īpašie statusi (pēc izvēles)</label>
+                <div class="checkbox-group">
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="is_disabled">
+                        <span>♿ Cilvēkiem ar īpašām vajadzībām</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="is_ev">
+                        <span>⚡ Elektroauto īpašnieks</span>
+                    </label>
+                </div>
+            </div>
+            <button type="submit">Reģistrēties</button>
+        </form>
+        <div class="footer-link">
+            Jau esat reģistrēts? <span onclick="switchTab('login')">Ienākt sistēmā</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Скрипт переключения вкладок
+    function switchTab(mode) {
+        // Элементы форм
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+
+        // Элементы вкладок
+        const tabLogin = document.getElementById('tab-login');
+        const tabRegister = document.getElementById('tab-register');
+
+        if (mode === 'login') {
+            loginForm.classList.add('active');
+            registerForm.classList.remove('active');
+            tabLogin.classList.add('active');
+            tabRegister.classList.remove('active');
+        } else if (mode === 'register') {
+            registerForm.classList.add('active');
+            loginForm.classList.remove('active');
+            tabRegister.classList.add('active');
+            tabLogin.classList.remove('active');
+        }
+    }
+</script>
+
 </body>
 </html>

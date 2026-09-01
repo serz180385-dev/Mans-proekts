@@ -1,28 +1,23 @@
 {
     "1": {
-        "status": {
-            "plate": "DZ6196",
-            "booked_at": "11.08.2026 19:30",
-            "duration_hours": 1,
-            "ends_at": "11.08.2026 20:30"
-        },
-        "type": "regular"
+        "status": true,
+        "type": "disabled"
     },
     "2": {
         "status": true,
-        "type": "regular"
+        "type": "disabled"
     },
     "3": {
         "status": true,
-        "type": "regular"
+        "type": "disabled"
     },
     "4": {
         "status": true,
-        "type": "regular"
+        "type": "disabled"
     },
     "5": {
         "status": true,
-        "type": "regular"
+        "type": "disabled"
     },
     "6": {
         "status": true,
@@ -46,21 +41,61 @@
     },
     "11": {
         "status": true,
-        "type": "ev"
+        "type": "regular"
     },
     "12": {
         "status": true,
-        "type": "ev"
+        "type": "regular"
     },
     "13": {
         "status": true,
-        "type": "ev"
+        "type": "regular"
     },
     "14": {
         "status": true,
-        "type": "ev"
+        "type": "regular"
     },
     "15": {
+        "status": true,
+        "type": "regular"
+    },
+    "16": {
+        "status": true,
+        "type": "regular"
+    },
+    "17": {
+        "status": true,
+        "type": "regular"
+    },
+    "18": {
+        "status": true,
+        "type": "regular"
+    },
+    "19": {
+        "status": true,
+        "type": "regular"
+    },
+    "20": {
+        "status": true,
+        "type": "regular"
+    },
+    "21": {
+        "status": true,
+        "type": "ev"
+    },
+    "22": {
+        "status": true,
+        "type": "ev"
+    },
+    "23": {
+        "status": true,
+        "type": "ev"
+    },
+    "24": {
+        "status": true,
+        "type": "ev"
+    },
+    "25": {
         "status": true,
         "type": "ev"
     }
