@@ -1,3 +1,4 @@
+import re  # <-- ШАГ 1: Добавляем встроенный модуль регулярных выражений
 from flask import Flask, render_template, request, redirect, session
 from database import load_data, save_data, load_users, save_users
 from datetime import datetime, timedelta
@@ -62,12 +63,12 @@ def home():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form['username'].strip()
+        # Приводим к нижнему регистру для предотвращения регистрозависимых багов
+        username = request.form['username'].strip().lower()
         password = request.form['password'].strip()
 
         users = load_users()
         if username in users and users[username]["password"] == password:
-            # Запоминаем уникальное имя пользователя, а не номер машины
             session["username"] = username
             return redirect('/')
         return render_template('login.html', error="Nepareizs lietotājvārds vai parole!")
@@ -88,9 +89,19 @@ def register():
     if not username or not password or not plate:
         return render_template('login.html', error="Visi lauki ir obligāti!")
 
+    # =========================================================================
+    # ШАГ 2: ВАЛИДАЦИЯ REGEX ДЛЯ ЛАТВИЙСКИХ НОМЕРОВ
+    # Шаблон: 2 заглавные латинские буквы, дефис, от 1 до 4 цифр (например, AA-1234)
+    # =========================================================================
+    plate_pattern = r"^[A-Z]{2}-\d{1,4}$"
+
+    if not re.match(plate_pattern, plate):
+        return render_template('login.html', error="Nepareizs auto numura formāts! Jābūt, piemēram, AA-1234")
+    # =========================================================================
+
     users = load_users()
 
-    # Исключаем создание дубликатов в разном регистре (Serz и serz теперь один аккаунт)
+    # Исключаем создание дубликатов в разном регистре
     username_key = username.lower()
     if username_key in [u.lower() for u in users.keys()]:
         return render_template('login.html', error="Šāds lietotājvārds jau eksistē!")

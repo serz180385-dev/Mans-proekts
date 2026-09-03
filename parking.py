@@ -6,10 +6,19 @@ from database import load_data, save_data, load_users, save_users
 PRICE_PER_HOUR = 2.0
 
 
-def parking_menu(current_plate):
+def parking_menu(current_user):  # <-- ИСПРАВЛЕНО: Принимаем имя пользователя
     """Главное меню управления парковкой"""
     while True:
-        print(f"\nAuto: {current_plate} (Autostāvvieta):")
+        # Динамически подгружаем госномер и актуальный баланс авторизованного юзера
+        users = load_users()
+        if current_user not in users:
+            print("❌ Kļūda: Lietotājs nav atrasts.")
+            break
+
+        current_plate = users[current_user]["plate"]
+        current_balance = users[current_user].get("balance", 0.0)
+
+        print(f"\nLietotājs: {current_user} | Auto: {current_plate} | Balanss: {current_balance:.2f} EUR")
         print("1. Skatīt stāvvietu karti")
         print("2. Rezervēt vietu")
         print("3. Atbrīvot vietu")
@@ -20,11 +29,11 @@ def parking_menu(current_plate):
         if choice == "1":
             show_spots(current_plate)
         elif choice == "2":
-            book_spot(current_plate)
+            book_spot(current_user)  # <-- ИСПРАВЛЕНО: Передаем имя пользователя
         elif choice == "3":
             free_spot(current_plate)
         elif choice == "4":
-            print("Atgriešanās sākuma izvēlnē...")
+            print("Atgriešanās sākuma izvēlē...")
             break
         else:
             print("Kļūda: Nepareiza izvēle!")
@@ -123,10 +132,12 @@ def show_spots(current_plate):
     print("=" * 80)
 
 
-def book_spot(current_plate):
-    """Функция бронирования места по госномеру с проверкой баланса, EV и инвалидного статуса (1-25)"""
+def book_spot(current_user):  # <-- ИСПРАВЛЕНО: Привязка строго к юзеру
+    """Функция бронирования места по имени пользователя с проверкой баланса и спец-статусов"""
     try:
         parking_spots = load_data()
+        users = load_users()
+        current_plate = users[current_user]["plate"]
 
         # Проверка на дублирование машины на парковке
         for spot_val in parking_spots.values():
@@ -146,24 +157,14 @@ def book_spot(current_plate):
             return
 
         target_spot = parking_spots[spot_number]
-        users = load_users()
 
-        user_key = None
-        for username, u_data in users.items():
-            if u_data["plate"] == current_plate:
-                user_key = username
-                break
-
-        if not user_key:
-            print("❌ Kļūda: Lietotājs ar šādu auto numuru nav atrasts!")
-            return
-
-        is_user_ev = users[user_key].get("is_ev", False)
-        is_user_disabled = users[user_key].get("is_disabled", False)
+        # === ИСПРАВЛЕНО: Читаем флаги напрямую из кошелька вошедшего водителя ===
+        is_user_ev = users[current_user].get("is_ev", False)
+        is_user_disabled = users[current_user].get("is_disabled", False)
 
         # Валидация зоны электромобилей (21-25)
         if isinstance(target_spot, dict) and target_spot.get("type") == "ev" and not is_user_ev:
-            print("❌ Kļūda: Vietas no 21 līdz 25 paredzētas tikai Elektroauto!")
+            print("❌ Kļūda: Vietas no 21 līdz 25 paredзētas tikai Elektroauto!")
             return
 
         # Валидация зоны для инвалидов (1-5)
@@ -183,14 +184,14 @@ def book_spot(current_plate):
                 return
 
             total_cost = duration * PRICE_PER_HOUR
-            current_balance = users[user_key].get("balance", 0.0)
+            current_balance = users[current_user].get("balance", 0.0)
 
             if current_balance < total_cost:
                 print(f"❌ Kļūda: Nepietiek līdzekļu! Vajag: {total_cost:.2f} EUR, Jums ir: {current_balance:.2f} EUR")
                 return
 
-            # Списание средств со счета авторизованного пользователя
-            users[user_key]["balance"] = current_balance - total_cost
+            # Списание средств СТРОГО со счета авторизованного пользователя
+            users[current_user]["balance"] = current_balance - total_cost
             save_users(users)
 
             now = datetime.now()
@@ -208,8 +209,7 @@ def book_spot(current_plate):
                 "ends_at": ends_at.strftime("%d.%m.%Y %H:%M")
             }
             save_data(parking_spots)
-            print(
-                f"✅ Veiksmīgi! Samaksāts: {total_cost:.2f} EUR. Vieta №{spot_number} rezervēta līdz {ends_at.strftime('%H:%M')}.")
+            print(f"✅ Veiksmīgi! Samaksāts: {total_cost:.2f} EUR. Vieta №{spot_number} rezervēta līdz {ends_at.strftime('%H:%M')}.")
         else:
             print(f"⚠️ Atvainojiet, vieta №{spot_number} jau ir aizņemta.")
 
@@ -240,6 +240,6 @@ def free_spot(current_plate):
             save_data(parking_spots)
             print(f"✅ Veiksmīgi! Jūs atbrīvojāt vietu №{spot_number}.")
         else:
-            print(f"❌ Kļūda: Jūs nevarat atbrīvot vietu №{spot_number}, jo to aizņēma cits auto!")
+            print(f"❌ Kļūda: Jūs nevarat atbrīvot vietu №{spot_number}, jo to aizņēma c持o!")
     except Exception as e:
         print(f"❌ Kļūda: {e}")

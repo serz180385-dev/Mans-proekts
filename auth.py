@@ -1,3 +1,4 @@
+import re  # <-- ОБЯЗАТЕЛЬНО: Добавляем модуль регулярных выражений
 from database import load_users, save_users
 
 
@@ -11,7 +12,10 @@ def register_user():
         print("❌ Kļūda: Lietotājvārds nevar būt tukšs!")
         return False
 
-    if username in users:
+    # Синхронизация с Flask: переводим в нижний регистр для ключа в JSON
+    username_key = username.lower()
+
+    if username_key in users:
         print("❌ Kļūda: Šāds lietotājvārds jau eksistē!")
         return False
 
@@ -22,33 +26,50 @@ def register_user():
 
     # Запрашиваем госномер машины
     car_plate = input("Ievadiet automašīnas numuru (piemēram, AA-1234): ").strip().upper()
-    if not car_plate:
-        print("❌ Kļūda: Automašīnas numurs nevar būt tukšs!")
-        return False
 
-    # Сохраняем новые данные в структуру
-    users[username] = {
+    # =========================================================================
+    # ВАЛИДАЦИЯ REGEX ДЛЯ ЛАТВИЙСКИХ НОМЕРОВ (2 буквы, дефис, 1-4 цифры)
+    # =========================================================================
+    plate_pattern = r"^[A-Z]{2}-\d{1,4}$"
+
+    if not re.match(plate_pattern, car_plate):
+        print("❌ Kļūda: Nepareizs auto numura formāts! Jābūt, piemēram, AA-1234")
+        return False
+    # =========================================================================
+
+    # Опросы для поддержки логики спец-зон (места 1-5 и 21-25)
+    is_ev_input = input("Vai tas ir elektroauto? (j/n): ").strip().lower()
+    is_ev = True if is_ev_input == 'j' else False
+
+    is_disabled_input = input("Vai ir invaliditātes statuss? (j/n): ").strip().lower()
+    is_disabled = True if is_disabled_input == 'j' else False
+
+    # Сохраняем данные в структуру с поддержкой кошелька и флагов типов авто
+    users[username_key] = {
         "password": password,
-        "plate": car_plate
+        "plate": car_plate,
+        "balance": 10.0,  # Приветственный баланс
+        "is_ev": is_ev,
+        "is_disabled": is_disabled
     }
     save_users(users)
-    print(f"✅ Lietotājs '{username}' ({car_plate}) veiksmīgi reģistrēts!")
+    print(f"✅ Lietotājs '{username_key}' ({car_plate}) veiksmīgi reģistrēts!")
     return True
 
 
 def login_user():
-    """Вход пользователя в систему (возвращает госномер автомобиля)"""
+    """Вход пользователя в систему (возвращает ИМЯ ПОЛЬЗОВАТЕЛЯ)"""
     print("\n--- AUTORIZĀCIJA ---")
     users = load_users()
 
-    username = input("Lietotājvārds: ").strip()
+    # Приводим к нижнему регистру для совместимости с базой данных
+    username = input("Lietotājvārds: ").strip().lower()
     password = input("Parole: ").strip()
 
-    # Проверяем, существует ли пользователь и совпадает ли пароль
+    # ИСПРАВЛЕНО: возвращаем имя пользователя (логин), чтобы работали раздельные балансы!
     if username in users and users[username]["password"] == password:
-        car_plate = users[username]["plate"]
-        print(f"✅ Sveiki, {username}! Automašīna: {car_plate}.")
-        return car_plate  # <--- Возвращаем госномер вместо имени пользователя!
+        print(f"✅ Sveiki, {username}! Automašīna: {users[username]['plate']}.")
+        return username  # <--- Теперь возвращаем уникальное имя пользователя
     else:
         print("❌ Kļūda: Nepareizs lietotājvārds vai parole!")
         return None
