@@ -149,7 +149,7 @@
                     {% endif %}
                 {% endif %}
 
-                <div class="spot" style="{{ inline_style }}">
+                <div class="spot" onclick="selectSpot('{{ i }}')" style="cursor: pointer; {{ inline_style }}">
                     <!-- Индикатор типа зоны -->
                     {% if spot_type == 'disabled' %}
                         <div style="font-size: 8px; font-weight: bold; color: #3b82f6; background: #eff6ff; padding: 0px 4px; border-radius: 4px; border: 1px solid #bfdbfe; margin-bottom: 1px;">♿ Invalidu</div>
@@ -230,3 +230,33 @@
     </div>
 </body>
 </html>
+<script>
+function selectSpot(spotNumber) {
+    // 1. Автоматически находим выпадающий список (select) выбора места в вашей форме
+    const spotSelect = document.querySelector('select[name="spot_number"]');
+
+    if (spotSelect) {
+        // Устанавливаем в выпадающем списке номер нажатого места
+        spotSelect.value = spotNumber;
+
+        // Оповещаем систему об изменении (нужно для корректной работы браузера)
+        spotSelect.dispatchEvent(new Event('change'));
+    }
+
+    // 2. Визуальный интерактив: сбрасываем эффекты выделения со всех мест на карте
+    document.querySelectorAll('.spot').forEach(card => {
+        card.style.boxShadow = 'none';
+        card.style.transform = 'scale(1)';
+        card.style.outline = 'none';
+    });
+
+    // Находим карточку, по которой кликнули, и добавляем ей красивую синюю подсветку
+    const activeCard = document.querySelector(`.spot[onclick="selectSpot('${spotNumber}')"]`);
+    if (activeCard) {
+        activeCard.style.boxShadow = '0 0 12px rgba(59, 130, 246, 0.7)';
+        activeCard.style.transform = 'scale(1.03)';
+        activeCard.style.outline = '2px solid #3b82f6';
+        activeCard.style.transition = 'all 0.2s ease';
+    }
+}
+</script>
