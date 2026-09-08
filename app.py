@@ -86,6 +86,9 @@ def register():
     is_ev = True if request.form.get('is_ev') == 'on' else False
     is_disabled = True if request.form.get('is_disabled') == 'on' else False
 
+    # ДОБАВЛЕНО: Считывание номера удостоверения инвалида из формы
+    disabled_card = request.form.get('disabled_card', '').strip()
+
     if not username or not password or not plate:
         return render_template('login.html', error="Visi lauki ir obligāti!")
 
@@ -93,10 +96,25 @@ def register():
     # ШАГ 2: ВАЛИДАЦИЯ REGEX ДЛЯ ЛАТВИЙСКИХ НОМЕРОВ
     # Шаблон: 2 заглавные латинские буквы, дефис, от 1 до 4 цифр (например, AA-1234)
     # =========================================================================
-    plate_pattern = r"^[A-Z]{2}-\d{1,4}$"
+    plate_pattern = r"^[A-Z]{2}\d{1,4}$"
 
     if not re.match(plate_pattern, plate):
-        return render_template('login.html', error="Nepareizs auto numura formāts! Jābūt, piemēram, AA-1234")
+        return render_template('login.html', error="Nepareizs auto numura formāts! Jābūt, piemēram, AA1234")
+    # =========================================================================
+
+    # =========================================================================
+    # ДОБАВЛЕНО: ВАЛИДАЦИЯ REGEX ДЛЯ УДОСТОВЕРЕНИЯ ИНВАЛИДА (Строго 6 цифр)
+    # =========================================================================
+    if is_disabled:
+        if not disabled_card:
+            return render_template('login.html', error="Kļūda: Jāievada invalīda apliecības numurs!")
+
+        card_pattern = r"^\d{6}$"  # Регулярное выражение: ровно 6 цифр
+        if not re.match(card_pattern, disabled_card):
+            return render_template('login.html',
+                                   error="Nepareizs apliecības formāts! Jābūt taisni 6 cipariem (piem., 123456)")
+    else:
+        disabled_card = None  # Если статус инвалида не выбран, обнуляем поле
     # =========================================================================
 
     users = load_users()
@@ -106,13 +124,14 @@ def register():
     if username_key in [u.lower() for u in users.keys()]:
         return render_template('login.html', error="Šāds lietotājvārds jau eksistē!")
 
-    # Привязываем профиль с поддержкой флагов EV и Инвалидности
+    # Привязываем профиль с поддержкой флагов EV, Инвалидности и Номера удостоверения
     users[username_key] = {
         "password": password,
         "plate": plate,
         "balance": 10.0,
         "is_ev": is_ev,
-        "is_disabled": is_disabled
+        "is_disabled": is_disabled,
+        "disabled_card": disabled_card  # <-- ДОБАВЛЕНО: сохраняем документ в базу данных
     }
     save_users(users)
 

@@ -227,13 +227,14 @@
             </div>
             <div class="form-group">
                 <label for="reg-plate">Automašīnas numurs</label>
-                <input type="text" id="reg-plate" name="plate" placeholder="Piemēрам, VR2010" required autocomplete="off">
+                <input type="text" id="reg-plate" name="plate" placeholder="Piemēram, VR2010" required autocomplete="off">
             </div>
             <div class="form-group">
                 <label>Īpašie statusi (pēc izvēles)</label>
                 <div class="checkbox-group">
                     <label class="checkbox-item">
-                        <input type="checkbox" name="is_disabled">
+                        <!-- ДОБАВЛЕНО: id="disabled_trigger" и событие onchange -->
+                        <input type="checkbox" name="is_disabled" id="disabled_trigger" onchange="toggleDisabledCardField()">
                         <span>♿ Cilvēkiem ar īpašām vajadzībām</span>
                     </label>
                     <label class="checkbox-item">
@@ -242,6 +243,16 @@
                     </label>
                 </div>
             </div>
+
+            <!-- ========================================================================= -->
+            <!-- ДОБАВЛЕНО: Динамическое поле ввода номера удостоверения инвалида -->
+            <!-- ========================================================================= -->
+            <div class="form-group" id="disabled_card_group" style="display: none; margin-top: 10px;">
+                <label for="reg-disabled-card">Invalīda apliecības numurs (6 cipari)</label>
+                <input type="text" id="reg-disabled-card" name="disabled_card" placeholder="Piemēram, 123456" maxlength="6" autocomplete="off">
+            </div>
+            <!-- ========================================================================= -->
+
             <button type="submit">Reģistrēties</button>
         </form>
         <div class="footer-link">
@@ -249,6 +260,29 @@
         </div>
     </div>
 </div>
+
+<!-- ========================================================================= -->
+<!-- ДОБАВЛЕНО: Скрипт переключения видимости поля удостоверения -->
+<!-- ========================================================================= -->
+<script>
+function toggleDisabledCardField() {
+    const checkbox = document.getElementById('disabled_trigger');
+    const cardGroup = document.getElementById('disabled_card_group');
+    const cardInput = document.getElementById('reg-disabled-card');
+
+    if (checkbox && cardGroup && cardInput) {
+        if (checkbox.checked) {
+            cardGroup.style.display = 'block'; // Плавно показываем поле
+            cardInput.required = true;         // Делаем поле обязательным для отправки во Flask
+            cardInput.focus();                 // Сразу ставим туда курсор для удобства ввода
+        } else {
+            cardGroup.style.display = 'none';  // Прячем поле обратно
+            cardInput.required = false;        // Убираем обязательность
+            cardInput.value = '';              // Стираем текст, если пользователь снял галочку
+        }
+    }
+}
+</script>
 
 <script>
     // Скрипт переключения вкладок
