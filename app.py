@@ -180,17 +180,28 @@ def handle_parking():
 
         target_spot = parking_spots[spot_number]
 
-        # Защита мест для инвалидов (1-5 места) по типу и по номеру
+        # ---------------------------------------------------------------------
+        # УЛУЧШЕНО: ГЛУБОКАЯ ПРОВЕРКА УДОСТОВЕРЕНИЯ ИНВАЛИДА ПРИ БРОНИРОВАНИИ
+        # ---------------------------------------------------------------------
         is_user_disabled = users[username].get("is_disabled", False)
+        # Извлекаем сохраненный номер удостоверения из базы данных пользователей
+        user_disabled_card = users[username].get("disabled_card")
+
+        # Определяем, является ли выбранное место инвалидным (места 1-5)
         is_spot_disabled = (isinstance(target_spot, dict) and target_spot.get("type") == "disabled") or (
                     1 <= int(spot_number) <= 5)
-        if is_spot_disabled and not is_user_disabled:
-            return redirect('/?msg=Kluda: Vietas no 1 lidz 5 paredzetas tikai cilvekiem ar ipasam vajadzibam!')
+
+        if is_spot_disabled:
+            # Блокируем бронирование, если нет статуса ИЛИ в базе отсутствует/пустой номер удостоверения
+            if not is_user_disabled or not user_disabled_card:
+                return redirect(
+                    '/?msg=Kluda: Vietas no 1 lidz 5 paredzetas tikai cilvekiem ar ipasam vajadzibam un invalidu apliecibu!')
+        # ---------------------------------------------------------------------
 
         # Блокировка ДВС-автомобилей на зарядках EV (21-25 места) по типу и по номеру
         is_user_ev = users[username].get("is_ev", False)
         is_spot_ev = (isinstance(target_spot, dict) and target_spot.get("type") == "ev") or (
-                    21 <= int(spot_number) <= 25)
+                21 <= int(spot_number) <= 25)
         if is_spot_ev and not is_user_ev:
             return redirect('/?msg=Kluda: Vietas no 21 lidz 25 paredzetas tikai Elektroauto!')
 
@@ -217,11 +228,14 @@ def handle_parking():
                 s_type = "disabled" if spot_id_int <= 5 else ("ev" if spot_id_int > 20 else "regular")
                 parking_spots[spot_number] = {"type": s_type}
 
+            # Записываем полные данные о бронировании, включая номер документа
             parking_spots[spot_number]["status"] = {
                 "plate": current_plate,
                 "booked_at": now.strftime("%d.%m.%Y %H:%M"),
                 "duration_hours": duration,
-                "ends_at": ends_at.strftime("%d.%m.%Y %H:%M")
+                "ends_at": ends_at.strftime("%d.%m.%Y %H:%M"),
+                # ДОБАВЛЕНО: привязываем номер удостоверения к активной брони места
+                "disabled_card": user_disabled_card if is_spot_disabled else None
             }
             save_data(parking_spots)
             return redirect(f'/?msg=Veiksmigi rezervets! Samaksats: {total_cost:.2f} EUR')

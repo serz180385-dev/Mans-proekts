@@ -38,5 +38,13 @@
         "is_ev": false,
         "is_disabled": false,
         "disabled_card": null
+    },
+    "lora": {
+        "password": "lora",
+        "plate": "FI1750",
+        "balance": 8.0,
+        "is_ev": false,
+        "is_disabled": true,
+        "disabled_card": "123456"
     }
 }
