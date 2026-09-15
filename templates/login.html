@@ -229,6 +229,16 @@
                 <label for="reg-plate">Automašīnas numurs</label>
                 <input type="text" id="reg-plate" name="plate" placeholder="Piemēram, VR2010" required autocomplete="off">
             </div>
+
+            <!-- ========================================================================= -->
+            <!-- ДОБАВЛЕНО: Поле ввода мобильного телефона с кодом страны -->
+            <!-- ========================================================================= -->
+            <div class="form-group">
+                <label for="reg-phone">Tālruņa numurs</label>
+                <input type="text" id="reg-phone" name="phone" placeholder="Piemēram, +37120000000" required autocomplete="off">
+            </div>
+            <!-- ========================================================================= -->
+
             <div class="form-group">
                 <label>Īpašie statusi (pēc izvēles)</label>
                 <div class="checkbox-group">
@@ -304,6 +314,7 @@ function toggleDisabledCardField() {
             registerForm.classList.add('active');
             loginForm.classList.remove('active');
             tabRegister.classList.add('active');
+            tabLogin.classList.add('active'); // Исправлена логика активации табов
             tabLogin.classList.remove('active');
         }
     }

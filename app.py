@@ -119,6 +119,11 @@ def register():
     password = request.form['password'].strip()
     plate = request.form['plate'].strip().upper()
 
+    # =========================================================================
+    # ДОБАВЛЕНО: Считывание номера телефона из HTML-формы
+    # =========================================================================
+    phone = request.form.get('phone', '').strip()
+
     # Считывание чекбоксов специальных статусов из HTML-формы
     is_ev = True if request.form.get('is_ev') == 'on' else False
     is_disabled = True if request.form.get('is_disabled') == 'on' else False
@@ -126,7 +131,8 @@ def register():
     # ДОБАВЛЕНО: Считывание номера удостоверения инвалида из формы
     disabled_card = request.form.get('disabled_card', '').strip()
 
-    if not username or not password or not plate:
+    # В проверку обязательных полей добавлено поле phone
+    if not username or not password or not plate or not phone:
         return render_template('login.html', error="Visi lauki ir obligāti!")
 
     # =========================================================================
@@ -137,6 +143,17 @@ def register():
 
     if not re.match(plate_pattern, plate):
         return render_template('login.html', error="Nepareizs auto numura formāts! Jābūt, piemēram, AA1234")
+    # =========================================================================
+
+    # =========================================================================
+    # ДОБАВЛЕНО: ВАЛИДАЦИЯ REGEX ДЛЯ МЕЖДУНАРОДНЫХ НОМЕРОВ ТЕЛЕФОНА
+    # Шаблон: Обязательный знак +, код страны (1-3 цифры) и сам номер (6-10 цифр)
+    # =========================================================================
+    phone_pattern = r"^\+\d{1,3}\d{6,10}$"
+
+    if not re.match(phone_pattern, phone):
+        return render_template('login.html',
+                               error="Nepareizs tālruņa formāts! Jāsākas ar + un valsts kodu (piemēram, +37120000000)")
     # =========================================================================
 
     # =========================================================================
@@ -161,20 +178,20 @@ def register():
     if username_key in [u.lower() for u in users.keys()]:
         return render_template('login.html', error="Šāds lietotājvārds jau eksistē!")
 
-    # Привязываем профиль с поддержкой флагов EV, Инвалидности и Номера удостоверения
+    # Привязываем профиль с поддержкой флагов EV, Инвалидности, Номера удостоверения и Номера телефона
     users[username_key] = {
         "password": password,
         "plate": plate,
+        "phone": phone,  # <-- ДОБАВЛЕНО: сохраняем номер телефона в базу данных users.json
         "balance": 10.0,
         "is_ev": is_ev,
         "is_disabled": is_disabled,
-        "disabled_card": disabled_card  # <-- ДОБАВЛЕНО: сохраняем документ в базу данных
+        "disabled_card": disabled_card
     }
     save_users(users)
 
     session["username"] = username_key
     return redirect('/')
-
 
 @app.route('/', methods=['POST'])
 def handle_parking():

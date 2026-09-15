@@ -77,6 +77,14 @@ def load_users():
                 for username in users:
                     if "balance" not in users[username]:
                         users[username]["balance"] = 10.0
+
+                    # =========================================================================
+                    # ДОБАВЛЕНО: Предохранитель для поддержки телефонных номеров старых сессий
+                    # =========================================================================
+                    if "phone" not in users[username]:
+                        users[username]["phone"] = "Nav norādīts"
+                    # =========================================================================
+
                     if "is_ev" not in users[username]:
                         users[username]["is_ev"] = False
                     if "is_disabled" not in users[username]:
