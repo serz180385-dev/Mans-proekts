@@ -7,7 +7,8 @@ def register_user():
     print("\n--- REĢISTRĀCIJA ---")
     users = load_users()
 
-    username = input("Ievadiet lietotājvārdu: ").strip()
+    # Защита от заглавных букв в терминале
+    username = input("Ievadiet lietotājvārdu: ").strip().lower()
     if not username:
         print("❌ Kļūda: Lietotājvārds nevar būt tukšs!")
         return False

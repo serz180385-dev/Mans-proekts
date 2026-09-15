@@ -114,7 +114,8 @@ def login():
 
 @app.route('/register', methods=['POST'])
 def register():
-    username = request.form['username'].strip()
+    # Принудительно переводим логин в нижний регистр при создании аккаунта
+    username = request.form['username'].strip().lower()
     password = request.form['password'].strip()
     plate = request.form['plate'].strip().upper()
 
