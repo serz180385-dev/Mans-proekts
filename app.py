@@ -29,18 +29,22 @@ def home():
     current_plate = user_data["plate"]
     current_balance = user_data.get("balance", 0.0)
 
+    # Безопасное считывание флага админа
+    is_admin = user_data.get("is_admin", False)
+
     # Высчитываем интеллектуальную подсказку о следующем свободном месте
     earliest_spot = None
     earliest_time = None
     all_occupied = True
 
     for spot_id, spot_val in spots.items():
-        if not isinstance(spot_val, dict):
-            status = spot_val
-        else:
+        # УНИВЕРСАЛЬНАЯ ПРОВЕРКА СТАТУСА (для старого и нового формата JSON)
+        if isinstance(spot_val, dict):
             status = spot_val.get("status", True)
+        else:
+            status = spot_val
 
-        if status is True:
+        if status is True or status == "True":
             all_occupied = False
         elif isinstance(status, dict) and "ends_at" in status:
             try:
@@ -55,22 +59,33 @@ def home():
     if all_occupied and earliest_time:
         next_free_info = f"Visas vietas ir aizņemtas. Tuvākā brīvā būs vieta №{earliest_spot} plkst. {earliest_time.strftime('%H:%M')}."
 
+    # Возвращаем полностью рабочий рендер страницы без ошибок
     return render_template('index.html', spots=spots, current_plate=current_plate,
                            current_balance=current_balance, msg=request.args.get('msg'),
-                           next_free_info=next_free_info)
+                           next_free_info=next_free_info, is_admin=is_admin)
 
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        # Приводим к нижнему регистру для предотвращения регистрозависимых багов
-        username = request.form['username'].strip().lower()
+        # Считываем введенные в форму данные и очищаем от пробелов
+        username_input = request.form['username'].strip().lower()
         password = request.form['password'].strip()
 
         users = load_users()
-        if username in users and users[username]["password"] == password:
-            session["username"] = username
+
+        # Переводим ключи базы данных в нижний регистр для безошибочного сравнения
+        found_username = None
+        for existing_user in users.keys():
+            if existing_user.lower() == username_input:
+                found_username = existing_user
+                break
+
+        # Если пользователь найден и пароль совпал — авторизуем
+        if found_username and users[found_username]["password"] == password:
+            session["username"] = found_username
             return redirect('/')
+
         return render_template('login.html', error="Nepareizs lietotājvārds vai parole!")
 
     return render_template('login.html')
@@ -268,7 +283,6 @@ def topup():
         return redirect('/login')
 
     username = session["username"]
-
     try:
         amount = float(request.form.get('amount', 0))
         if amount <= 0:
@@ -281,14 +295,195 @@ def topup():
         users[username]["balance"] = users[username].get("balance", 0.0) + amount
         save_users(users)
 
+        # Логирование транзакции пополнения в файл
+        try:
+            with open("transactions.txt", "a", encoding="utf-8") as log_file:
+                log_file.write(
+                    f"{datetime.now().strftime('%d.%m.%Y %H:%M:%S')} [💳 TOPUP] Lietotājs: {username:<12} | Summa: + {amount:>5.2f} EUR\n")
+        except Exception:
+            pass
+
     return redirect(f'/?msg=Balanss veiksmigi papildinats par {amount:.2f} EUR!')
+
+
+# =========================================================================
+# ВЕБ-ИНТЕРФЕЙС И РОУТЫ ПАНЕЛИ АДМИНИСТРАТОРА
+# =========================================================================
+import os
+from flask import send_file
+
+
+@app.route('/admin')
+def admin_panel():
+    """Главная страница администратора с визуальными таблицами, точной статистикой и логами"""
+    if "username" not in session:
+        return redirect('/login')
+
+    users = load_users()
+    current_user_data = users.get(session["username"])
+
+    # Строгая проверка на права администратора
+    if not current_user_data or not current_user_data.get("is_admin", False):
+        return redirect('/?msg=Kluda: Tev nav administratora tiesibu!')
+
+    spots = load_data()
+
+    # 1. Самостоятельный расчет загруженности регулярной зоны в процентах
+    regular_spots = [s for k, s in spots.items() if
+                     (isinstance(s, dict) and s.get("type") == "regular") or (6 <= int(k) <= 20)]
+    total_reg = len(regular_spots) if regular_spots else 15
+    busy_reg = 0
+    for k, s in spots.items():
+        if (isinstance(s, dict) and s.get("type") == "regular") or (6 <= int(k) <= 20):
+            status = s.get("status", True) if isinstance(s, dict) else s
+            if status is not True:
+                busy_reg += 1
+    reg_occupancy = round((busy_reg / total_reg) * 100, 1)
+
+    # 2. Инициализируем финансовые счетчики и массив истории
+    fin_report = {
+        "total_revenue": 0.0,
+        "total_penalties": 0.0,
+        "total_topups": 0.0
+    }
+
+    transaction_history = []
+
+    # 3. Безопасно парсим transactions.txt с извлечением реальных сумм через регулярные выражения
+    if os.path.exists("transactions.txt"):
+        try:
+            with open("transactions.txt", "r", encoding="utf-8") as f:
+                for line in f:
+                    cleaned_line = line.strip()
+                    if not cleaned_line:
+                        continue
+
+                    # Добавляем строку в историю
+                    transaction_history.append(cleaned_line)
+
+                    # Регулярное выражение для поиска дробного числа после слова 'Summa:'
+                    # Ищет знаки '+' или '-', пробелы и само число (например: -  4.00 или + 15.50)
+                    match = re.search(r"Summa:\s*[+-]?\s*([\d.]+)", cleaned_line)
+                    if match:
+                        actual_amount = float(match.group(1))
+
+                        if "[💸 PAYMENT]" in cleaned_line:
+                            fin_report["total_revenue"] += actual_amount
+                        elif "[⚠️ PENALTY]" in cleaned_line:
+                            fin_report["total_penalties"] += actual_amount
+                        elif "[💳 TOPUP]" in cleaned_line:
+                            fin_report["total_topups"] += actual_amount
+        except Exception:
+            pass
+
+    # Разворачиваем историю, чтобы самые свежие действия были вверху страницы
+    transaction_history.reverse()
+
+    occupancy = {"regular": reg_occupancy}
+
+    return render_template('admin.html',
+                           users=users,
+                           fin=fin_report,
+                           occ=occupancy,
+                           spots=spots,
+                           transactions=transaction_history,  # <-- Передаем массив логов в HTML
+                           msg=request.args.get('msg'))
+
+
+@app.route('/admin/topup-user', methods=['POST'])
+def admin_topup_user():
+    """Принудительное изменение/начисление баланса любому водителю из панели админа"""
+    if "username" not in session:
+        return redirect('/login')
+
+    users = load_users()
+    if not users.get(session["username"], {}).get("is_admin", False):
+        return redirect('/?msg=Kluda: Piekluve liegta!')
+
+    target_user = request.form.get("target_user", "").strip().lower()
+    try:
+        bonus_amount = float(request.form.get("amount", 0))
+    except ValueError:
+        return redirect('/admin?msg=Kluda: Nepareizs summas formats!')
+
+    if target_user in users:
+        users[target_user]["balance"] = users[target_user].get("balance", 0.0) + bonus_amount
+        save_users(users)
+
+        # Логируем административное изменение баланса в общую историю
+        try:
+            with open("transactions.txt", "a", encoding="utf-8") as log_file:
+                log_file.write(
+                    f"{datetime.now().strftime('%d.%m.%Y %H:%M:%S')} [💳 TOPUP] Admin: {session['username']} -> {target_user} | Summa: + {bonus_amount:.2f} EUR\n"
+                )
+        except Exception:
+            pass
+
+        return redirect(f'/admin?msg=Lietotaja {target_user} balanss papildinats par {bonus_amount:.2f} EUR!')
+    return redirect('/admin?msg=Kluda: Lietotajs nav atrasts!')
+
+
+@app.route('/admin/clear-spot/<spot_id>', methods=['POST'])
+def admin_clear_spot(spot_id):
+    """Экстренная очистка места администратором (эвакуация авто)"""
+    if "username" not in session:
+        return redirect('/login')
+
+    users = load_users()
+    if not users.get(session["username"], {}).get("is_admin", False):
+        return redirect('/?msg=Piekluve+liegta')
+
+    spots = load_data()
+    if spot_id in spots:
+        # Пытаемся вытащить инфо о машине перед удалением для логов
+        old_status = spots[spot_id].get("status") if isinstance(spots[spot_id], dict) else spots[spot_id]
+        plate_info = "Nezināms"
+        if isinstance(old_status, dict):
+            plate_info = old_status.get("plate", "Nezināms")
+        elif isinstance(old_status, str):
+            plate_info = old_status
+
+        if isinstance(spots[spot_id], dict):
+            spots[spot_id]["status"] = True
+        else:
+            spots[spot_id] = True
+        save_data(spots)
+
+        # Записываем факт принудительной эвакуации автомобиля в transactions.txt
+        try:
+            with open("transactions.txt", "a", encoding="utf-8") as log_file:
+                log_file.write(
+                    f"{datetime.now().strftime('%d.%m.%Y %H:%M:%S')} [⚠️ PENALTY] Evakuācija: Vieta №{spot_id} | Auto: {plate_info} | Summa: 0.00 EUR\n"
+                )
+        except Exception:
+            pass
+
+        return redirect(f'/admin?msg=Vieta Nr.{spot_id} veiksmigi atbrivota piespiedu karta!')
+    return redirect('/admin?msg=Kluda: Sada vieta neegziste!')
+
+
+@app.route('/admin/export')
+def admin_export_report():
+    """Скачивание файла истории транзакций напрямую из админки без сторонних модулей"""
+    if "username" not in session:
+        return redirect('/login')
+
+    users = load_users()
+    if not users.get(session["username"], {}).get("is_admin", False):
+        return redirect('/?msg=Piekluve+liegta')
+
+    if os.path.exists("transactions.txt"):
+        return send_file("transactions.txt", as_attachment=True, download_name="parking_transactions.txt")
+    return redirect('/admin?msg=Kluda: Logi ir tuksni!')
 
 
 @app.route('/logout')
 def logout():
+    """Безопасный выход пользователя из системы с очисткой сессии"""
     session.clear()
     return redirect('/login')
 
 
 if __name__ == '__main__':
+    # Запуск локального веб-сервера Flask в режиме отладки
     app.run(debug=True)

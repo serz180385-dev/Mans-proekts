@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ParkNow - Admin Panel</title>
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --danger: #ef4444;
+            --success: #10b981;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card-bg);
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+        .logo span { font-weight: 300; color: #64748b; }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+            border: none;
+            transition: opacity 0.2s;
+            display: inline-block;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-secondary { background: #64748b; color: white; }
+
+        .alert {
+            background: #ffedd5;
+            color: #9a3412;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+            font-size: 14px;
+            border-left: 4px solid #f97316;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .stat-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border-top: 3px solid var(--primary);
+        }
+        .stat-title { font-size: 13px; color: #64748b; font-weight: 600; text-transform: uppercase; }
+        .stat-value { font-size: 22px; font-weight: 700; margin-top: 5px; }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        .card-title { font-size: 16px; font-weight: 700; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 8px;}
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        th, td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        th { background: #f1f5f9; font-weight: 600; color: #475569; }
+        tr:hover { background: #f8fafc; }
+
+        .badge {
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .badge-disabled { background: #e0f2fe; color: #0369a1; }
+        .badge-ev { background: #ccfbf1; color: #0f766e; }
+        .badge-admin { background: #f3e8ff; color: #6b21a8; }
+
+        .admin-spots-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+        }
+        .admin-spot {
+            border: 1px solid var(--border);
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 13px;
+        }
+        .spot-free { border-top: 3px solid var(--success); background: #f0fdf4; }
+        .spot-busy { border-top: 3px solid var(--danger); background: #fef2f2; }
+
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; }
+        .form-control {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ParkNow - Admin Panel</title>
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --danger: #ef4444;
+            --success: #10b981;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card-bg);
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+        .logo span { font-weight: 300; color: #64748b; }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+            border: none;
+            transition: opacity 0.2s;
+            display: inline-block;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-secondary { background: #64748b; color: white; }
+
+        .alert {
+            background: #ffedd5;
+            color: #9a3412;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+            font-size: 14px;
+            border-left: 4px solid #f97316;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .stat-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border-top: 3px solid var(--primary);
+        }
+        .stat-title { font-size: 13px; color: #64748b; font-weight: 600; text-transform: uppercase; }
+        .stat-value { font-size: 22px; font-weight: 700; margin-top: 5px; }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        .card-title { font-size: 16px; font-weight: 700; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 8px;}
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        th, td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        th { background: #f1f5f9; font-weight: 600; color: #475569; }
+        tr:hover { background: #f8fafc; }
+
+        .badge {
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            display: inline-block;
+            margin-right: 2px;
+        }
+        .badge-disabled { background: #e0f2fe; color: #0369a1; }
+        .badge-ev { background: #ccfbf1; color: #0f766e; }
+        .badge-admin { background: #f3e8ff; color: #6b21a8; }
+
+        .admin-spots-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+        }
+        .admin-spot {
+            border: 1px solid var(--border);
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 13px;
+        }
+        .spot-free { border-top: 3px solid var(--success); background: #f0fdf4; }
+        .spot-busy { border-top: 3px solid var(--danger); background: #fef2f2; }
+
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; }
+        .form-control {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Шапка панели -->
+    <div class="header">
+        <div class="logo">PARK<span>NOW</span> 🛠️ ADMIN</div>
+        <div>
+            <a href="/admin/export" class="btn btn-success" style="margin-right: 10px;">📥 Eksportēt TXT atskaiti</a>
+            <a href="/" class="btn btn-secondary">💻 Uz karti</a>
+        </div>
+    </div>
+
+    <!-- Уведомления системы -->
+    {% if msg %}
+        <div class="alert" id="system-alert">{{ msg }}</div>
+        <script>
+            setTimeout(() => {
+                const alertBlock = document.getElementById('system-alert');
+                if(alertBlock) alertBlock.style.display = 'none';
+            }, 5000);
+        </script>
+    {% endif %}
+
+    <!-- Информационные виджеты статистики -->
+    <div class="stats-grid">
+        <div class="stat-card" style="border-top-color: #10b981;">
+            <div class="stat-title">Rezervāciju ieņēmumi</div>
+            <div class="stat-value">{{ "%.2f"|format(fin.total_revenue) }} €</div>
+        </div>
+        <div class="stat-card" style="border-top-color: #ef4444;">
+            <div class="stat-title">Iekasētie sodi</div>
+            <div class="stat-value">{{ "%.2f"|format(fin.total_penalties) }} €</div>
+        </div>
+        <div class="stat-card" style="border-top-color: #3b82f6;">
+            <div class="stat-title">Kopējie maku top-up</div>
+            <div class="stat-value">{{ "%.2f"|format(fin.total_topups) }} €</div>
+        </div>
+        <div class="stat-card" style="border-top-color: #f59e0b;">
+            <div class="stat-title">Zonu nosodze (Regular)</div>
+            <div class="stat-value">{{ occ.regular }}%</div>
+        </div>
+    </div>
+
+    <!-- Основной блок (Сетка из двух колонок) -->
+    <div class="main-grid">
+
+        <!-- ЛЕВАЯ КОЛОНКА -->
+        <div>
+            <!-- Список пользователей системы -->
+            <div class="card">
+                <div class="card-title">Reģistrētie autovadītāji un maki</div>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Lietotājvārds</th>
+                                <th>Auto Numurs</th>
+                                <th>Konta Balanss</th>
+                                <th>Statusi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for uname, udata in users.items() %}
+                            <tr>
+                                <td style="font-weight: 600;">{{ uname }}</td>
+                                <td><code style="background: #f1f5f9; padding: 2px 6px; border-radius:4px;">{{ udata.plate }}</code></td>
+                                <td style="font-weight: bold; color: {% if udata.balance < 0 %}#ef4444{% else %}#10b981{% endif %};">
+                                    {{ "%.2f"|format(udata.balance) }} €
+                                </td>
+                                <td>
+                                    {% if udata.is_admin %}<span class="badge badge-admin">Admin</span>{% endif %}
+                                    {% if udata.is_disabled %}<span class="badge badge-disabled">♿ {{ udata.disabled_card if udata.disabled_card else 'Nav' }}</span>{% endif %}
+                                    {% if udata.is_ev %}<span class="badge badge-ev">⚡ EV</span>{% endif %}
+                                    {% if not udata.is_admin and not udata.is_disabled and not udata.is_ev %}—{% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Лента транзакций и системных логов -->
+            <div class="card">
+                <div class="card-title">Pēdējās transakcijas un sistēmas notikumi</div>
+                <div class="transaction-log-container" style="background: #1e1e1e; color: #a9b7c6; font-family: monospace; padding: 15px; border-radius: 8px; max-height: 300px; overflow-y: auto; border: 1px solid #323232;">
+                    {% if transactions %}
+                        {% for tx in transactions %}
+                            <div class="tx-line" style="border-bottom: 1px solid #2b2b2b; padding: 4px 0; font-size: 13px; line-height: 1.4;">
+                                {% if "[💸 PAYMENT]" in tx %}
+                                    <span style="color: #62b47d;">{{ tx }}</span>
+                                {% elif "[💳 TOPUP]" in tx %}
+                                    <span style="color: #589df6;">{{ tx }}</span>
+                                {% elif "[⚠️ PENALTY]" in tx or "[⚠ PENALTY]" in tx %}
+                                    <span style="color: #ef4444;">{{ tx }}</span>
+                                {% else %}
+                                    <span>{{ tx }}</span>
+                                {% endif %}
+                                {% endfor %}
+    {% else %}
+        <div style="color: #808080; text-align: center; padding: 15px;">Vēsture ir tukša. Nav reģistrētu transakciju.</div>
+    {% endif %}
+</div> <!-- Закрываем контейнер лога транзакций -->
+
+</div> <!-- Закрываем левую колонку (со списком водителей и логами) -->
+
+<!-- ПРАВАЯ КОЛОНКА: Корректировка баланса и Эвакуатор мест -->
+<div>
+    <!-- Форма корректировки баланса -->
+    <div class="card">
+        <div class="card-title">Korektēt lietotāja bilanci</div>
+        <form action="/admin/topup-user" method="POST">
+            <div class="form-group">
+                <label>Izvēlieties lietotāju:</label>
+                <select name="target_user" class="form-control" required>
+                    <option value="">— Lietotājs —</option>
+                    {% for uname in users.keys() %}
+                        <option value="{{ uname }}">{{ uname }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Summa (EUR):</label>
+                <input type="number" step="0.01" min="-9999" max="9999" name="amount" placeholder="Piemēram, 15.00 vai -5.00" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 5px;">Saglabāt izmaiņas</button>
+        </form>
+    </div>
+
+    <!-- Блок Piespiedu vietu atbrīvošana (Экспресс-эвакуатор) -->
+    <div class="card">
+        <div class="card-title">Piespiedu vietu atbrīvošana</div>
+        <div class="admin-spots-grid">
+            {% for i in range(1, 26) %}
+                {% set i_str = i|string %}
+                {% set spot = spots[i_str] %}
+                {% set status = spot.get('status', true) if spot is mapping else spot %}
+
+                {% if status is sameas true or status == true or status == "True" %}
+                    <div class="admin-spot spot-free" title="Vieta ir brīva">
+                        <div style="font-weight: bold;">№{{ i }}</div>
+                        <div style="font-size: 9px; color: #64748b; margin-top:3px;">Brīvs</div>
+                    </div>
+                {% else %}
+                    <!-- Форма для отправки POST-запроса на бэкенд для очистки места -->
+                    <form action="/admin/clear-spot/{{ i }}" method="POST" style="margin:0;">
+                        <button type="submit" class="admin-spot spot-busy" style="width:100%; cursor:pointer; font-family:inherit; background:none; border:none; padding:10px 0;" title="Evakuēt auto" onclick="return confirm('Vai tiešām vēlaties piespiedu kārtā atbrīvot vietu №{{ i }}?');">
+                            <div style="font-weight: bold; color:#1e293b;">№{{ i }}</div>
+                            <div style="font-size: 9px; color: var(--danger); font-weight:700; margin-top:3px;">❌ Atbrīvot</div>
+                        </button>
+                    </form>
+                {% endif %}
+            {% endfor %}
+        </div> <!-- Закрываем .admin-spots-grid -->
+    </div> <!-- Закрываем .card (карту эвакуатора) -->
+</div> <!-- Закрываем правую колонку -->
+
+</div> <!-- Закрываем общий контейнер .main-grid (двухколоночную сетку) -->
+</div> <!-- Закрываем главный .container -->
+
+</body>
+</html>
