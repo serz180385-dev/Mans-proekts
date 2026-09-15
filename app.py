@@ -10,8 +10,26 @@ app.secret_key = "super_secret_parking_key"
 PRICE_PER_HOUR = 2.0
 
 
+def log_transaction(tag, user, details, amount_str):
+    """
+    Вспомогательная функция для наведения красоты в файле transactions.txt.
+    Выравнивает все записи строго по колонкам «тютелька в тютельку».
+    """
+    try:
+        log_time = datetime.now().strftime('%d.%m.%Y %H:%M:%S')
+        with open("transactions.txt", "a", encoding="utf-8") as log_file:
+            # Строгое форматирование по ширине полей: тэг (12), юзер (12), детали (50), сумма (7)
+            log_file.write(
+                f"{log_time} {tag:<12} Lietotājs: {user:<12} | "
+                f"{details:<50} | Summa: {amount_str:>7} EUR\n"
+            )
+    except Exception:
+        pass  # Защита сервера от сбоев записи на диск, чтобы программа не падала
+
+
 @app.route('/')
 def home():
+    """Главная страница интерактивной карты парковки для авторизованных водителей"""
     # Проверяем авторизацию по имени пользователя
     if "username" not in session:
         return redirect('/login')
@@ -57,7 +75,10 @@ def home():
 
     next_free_info = None
     if all_occupied and earliest_time:
-        next_free_info = f"Visas vietas ir aizņemtas. Tuvākā brīvā būs vieta №{earliest_spot} plkst. {earliest_time.strftime('%H:%M')}."
+        next_free_info = (
+            f"Visas vietas ir aizņemtas. Tuvākā brīvā būs vieta №{earliest_spot} "
+            f"plkst. {earliest_time.strftime('%H:%M')}."
+        )
 
     # Возвращаем полностью рабочий рендер страницы без ошибок
     return render_template('index.html', spots=spots, current_plate=current_plate,
@@ -279,6 +300,7 @@ def handle_parking():
 
 @app.route('/topup', methods=['POST'])
 def topup():
+    """Пополнение баланса водителем из личного кабинета с авто-логированием"""
     if "username" not in session:
         return redirect('/login')
 
@@ -295,13 +317,8 @@ def topup():
         users[username]["balance"] = users[username].get("balance", 0.0) + amount
         save_users(users)
 
-        # Логирование транзакции пополнения в файл
-        try:
-            with open("transactions.txt", "a", encoding="utf-8") as log_file:
-                log_file.write(
-                    f"{datetime.now().strftime('%d.%m.%Y %H:%M:%S')} [💳 TOPUP] Lietotājs: {username:<12} | Summa: + {amount:>5.2f} EUR\n")
-        except Exception:
-            pass
+        # Вызов красивой функции логирования
+        log_transaction("[💳 TOPUP]", username, "Papildināja savu virtuālo maku", f"+{amount:.2f}")
 
     return redirect(f'/?msg=Balanss veiksmigi papildinats par {amount:.2f} EUR!')
 
@@ -309,8 +326,8 @@ def topup():
 # =========================================================================
 # ВЕБ-ИНТЕРФЕЙС И РОУТЫ ПАНЕЛИ АДМИНИСТРАТОРА
 # =========================================================================
-import os
 from flask import send_file
+import os
 
 
 @app.route('/admin')
@@ -349,7 +366,7 @@ def admin_panel():
 
     transaction_history = []
 
-    # 3. Безопасно парсим transactions.txt с извлечением реальных сумм через регулярные выражения
+    # 3. Безопасно парсим transactions.txt с извлечением реальных сумм
     if os.path.exists("transactions.txt"):
         try:
             with open("transactions.txt", "r", encoding="utf-8") as f:
@@ -358,11 +375,9 @@ def admin_panel():
                     if not cleaned_line:
                         continue
 
-                    # Добавляем строку в историю
                     transaction_history.append(cleaned_line)
 
-                    # Регулярное выражение для поиска дробного числа после слова 'Summa:'
-                    # Ищет знаки '+' или '-', пробелы и само число (например: -  4.00 или + 15.50)
+                    import re
                     match = re.search(r"Summa:\s*[+-]?\s*([\d.]+)", cleaned_line)
                     if match:
                         actual_amount = float(match.group(1))
@@ -376,9 +391,7 @@ def admin_panel():
         except Exception:
             pass
 
-    # Разворачиваем историю, чтобы самые свежие действия были вверху страницы
     transaction_history.reverse()
-
     occupancy = {"regular": reg_occupancy}
 
     return render_template('admin.html',
@@ -386,13 +399,13 @@ def admin_panel():
                            fin=fin_report,
                            occ=occupancy,
                            spots=spots,
-                           transactions=transaction_history,  # <-- Передаем массив логов в HTML
+                           transactions=transaction_history,
                            msg=request.args.get('msg'))
 
 
 @app.route('/admin/topup-user', methods=['POST'])
 def admin_topup_user():
-    """Принудительное изменение/начисление баланса любому водителю из панели админа"""
+    """Принудительное начисление/списание баланса админом с выравниванием лога"""
     if "username" not in session:
         return redirect('/login')
 
@@ -410,22 +423,16 @@ def admin_topup_user():
         users[target_user]["balance"] = users[target_user].get("balance", 0.0) + bonus_amount
         save_users(users)
 
-        # Логируем административное изменение баланса в общую историю
-        try:
-            with open("transactions.txt", "a", encoding="utf-8") as log_file:
-                log_file.write(
-                    f"{datetime.now().strftime('%d.%m.%Y %H:%M:%S')} [💳 TOPUP] Admin: {session['username']} -> {target_user} | Summa: + {bonus_amount:.2f} EUR\n"
-                )
-        except Exception:
-            pass
+        sign = f"+{bonus_amount:.2f}" if bonus_amount >= 0 else f"{bonus_amount:.2f}"
+        log_transaction("[💳 TOPUP]", target_user, f"Admin ({session['username']}) mainīja bilanci", sign)
 
-        return redirect(f'/admin?msg=Lietotaja {target_user} balanss papildinats par {bonus_amount:.2f} EUR!')
+        return redirect(f'/admin?msg=Lietotaja {target_user} balanss mainits par {bonus_amount:.2f} EUR!')
     return redirect('/admin?msg=Kluda: Lietotajs nav atrasts!')
 
 
 @app.route('/admin/clear-spot/<spot_id>', methods=['POST'])
 def admin_clear_spot(spot_id):
-    """Экстренная очистка места администратором (эвакуация авто)"""
+    """Экстренная эвакуация машины администратором с красивым логированием"""
     if "username" not in session:
         return redirect('/login')
 
@@ -435,7 +442,6 @@ def admin_clear_spot(spot_id):
 
     spots = load_data()
     if spot_id in spots:
-        # Пытаемся вытащить инфо о машине перед удалением для логов
         old_status = spots[spot_id].get("status") if isinstance(spots[spot_id], dict) else spots[spot_id]
         plate_info = "Nezināms"
         if isinstance(old_status, dict):
@@ -449,14 +455,8 @@ def admin_clear_spot(spot_id):
             spots[spot_id] = True
         save_data(spots)
 
-        # Записываем факт принудительной эвакуации автомобиля в transactions.txt
-        try:
-            with open("transactions.txt", "a", encoding="utf-8") as log_file:
-                log_file.write(
-                    f"{datetime.now().strftime('%d.%m.%Y %H:%M:%S')} [⚠️ PENALTY] Evakuācija: Vieta №{spot_id} | Auto: {plate_info} | Summa: 0.00 EUR\n"
-                )
-        except Exception:
-            pass
+        log_transaction("[⚠️ PENALTY]", "admin", f"Piespiedu evakuācija no vietas №{spot_id} (Auto: {plate_info})",
+                        "0.00")
 
         return redirect(f'/admin?msg=Vieta Nr.{spot_id} veiksmigi atbrivota piespiedu karta!')
     return redirect('/admin?msg=Kluda: Sada vieta neegziste!')
@@ -464,7 +464,7 @@ def admin_clear_spot(spot_id):
 
 @app.route('/admin/export')
 def admin_export_report():
-    """Скачивание файла истории транзакций напрямую из админки без сторонних модулей"""
+    """Скачивание файла истории транзакций напрямую из админки"""
     if "username" not in session:
         return redirect('/login')
 
@@ -485,5 +485,4 @@ def logout():
 
 
 if __name__ == '__main__':
-    # Запуск локального веб-сервера Flask в режиме отладки
     app.run(debug=True)
