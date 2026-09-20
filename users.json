@@ -3,25 +3,41 @@
         "password": "123456",
         "plate": "VR2010",
         "balance": 19.0,
-        "is_ev": false
+        "is_ev": false,
+        "phone": "Nav norādīts",
+        "is_disabled": false,
+        "disabled_card": null,
+        "is_admin": false
     },
     "serz": {
         "password": "123456",
         "plate": "VR2010",
         "balance": 8.0,
-        "is_ev": false
+        "is_ev": false,
+        "phone": "Nav norādīts",
+        "is_disabled": false,
+        "disabled_card": null,
+        "is_admin": false
     },
     "sinavskis": {
         "password": "123456",
         "plate": "МК5240",
         "balance": 10.0,
-        "is_ev": false
+        "is_ev": false,
+        "phone": "Nav norādīts",
+        "is_disabled": false,
+        "disabled_card": null,
+        "is_admin": false
     },
-    "Zanna": {
+    "zanna": {
         "password": "53128",
         "plate": "DZ6196",
-        "balance": 2.0,
-        "is_ev": false
+        "balance": 17.0,
+        "is_ev": false,
+        "phone": "Nav norādīts",
+        "is_disabled": false,
+        "disabled_card": null,
+        "is_admin": false
     },
     "luka": {
         "password": "1234",
@@ -29,7 +45,9 @@
         "balance": 10.0,
         "is_ev": false,
         "is_disabled": false,
-        "disabled_card": null
+        "disabled_card": null,
+        "phone": "Nav norādīts",
+        "is_admin": false
     },
     "vladimirs": {
         "password": "987654",
@@ -37,7 +55,9 @@
         "balance": 10.0,
         "is_ev": false,
         "is_disabled": false,
-        "disabled_card": null
+        "disabled_card": null,
+        "phone": "Nav norādīts",
+        "is_admin": false
     },
     "lora": {
         "password": "lora",
@@ -45,6 +65,30 @@
         "balance": 8.0,
         "is_ev": false,
         "is_disabled": true,
-        "disabled_card": "123456"
+        "disabled_card": "123456",
+        "phone": "Nav norādīts",
+        "is_admin": false
+    },
+    "admin": {
+        "password": "laguna180385",
+        "plate": "VR2010",
+        "phone": "Nav norādīts",
+        "email": "admin@parknow.lv",
+        "balance": 24.0,
+        "is_ev": false,
+        "is_disabled": false,
+        "disabled_card": null,
+        "is_admin": true
+    },
+    "viktors": {
+        "password": "7777",
+        "plate": "OR4050",
+        "phone": "+37122222222",
+        "email": "serz180385@gmail.com",
+        "balance": 25.0,
+        "is_ev": false,
+        "is_disabled": false,
+        "disabled_card": null,
+        "is_admin": false
     }
 }
