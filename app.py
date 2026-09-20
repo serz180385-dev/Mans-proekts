@@ -119,57 +119,59 @@ def register():
     password = request.form['password'].strip()
     plate = request.form['plate'].strip().upper()
 
-    # =========================================================================
-    # ДОБАВЛЕНО: Считывание номера телефона из HTML-формы
-    # =========================================================================
+    # Считывание контактных данных из HTML-формы
     phone = request.form.get('phone', '').strip()
+    email = request.form.get('email', '').strip()
 
     # Считывание чекбоксов специальных статусов из HTML-формы
     is_ev = True if request.form.get('is_ev') == 'on' else False
     is_disabled = True if request.form.get('is_disabled') == 'on' else False
 
-    # ДОБАВЛЕНО: Считывание номера удостоверения инвалида из формы
+    # Считывание номера удостоверения инвалида из формы
     disabled_card = request.form.get('disabled_card', '').strip()
 
-    # В проверку обязательных полей добавлено поле phone
-    if not username or not password or not plate or not phone:
+    # СТРОГАЯ ПРОВЕРКА НА ОБЯЗАТЕЛЬНОСТЬ ВСЕХ ПОЛЕЙ (Убран дубликат, где терялся email)
+    if not username or not password or not plate or not phone or not email:
         return render_template('login.html', error="Visi lauki ir obligāti!")
 
     # =========================================================================
     # ШАГ 2: ВАЛИДАЦИЯ REGEX ДЛЯ ЛАТВИЙСКИХ НОМЕРОВ
-    # Шаблон: 2 заглавные латинские буквы, дефис, от 1 до 4 цифр (например, AA-1234)
     # =========================================================================
     plate_pattern = r"^[A-Z]{2}\d{1,4}$"
 
     if not re.match(plate_pattern, plate):
         return render_template('login.html', error="Nepareizs auto numura formāts! Jābūt, piemēram, AA1234")
-    # =========================================================================
 
     # =========================================================================
-    # ДОБАВЛЕНО: ВАЛИДАЦИЯ REGEX ДЛЯ МЕЖДУНАРОДНЫХ НОМЕРОВ ТЕЛЕФОНА
-    # Шаблон: Обязательный знак +, код страны (1-3 цифры) и сам номер (6-10 цифр)
+    # ВАЛИДАЦИЯ REGEX ДЛЯ МЕЖДУНАРОДНЫХ НОМЕРОВ ТЕЛЕФОНА
     # =========================================================================
     phone_pattern = r"^\+\d{1,3}\d{6,10}$"
 
     if not re.match(phone_pattern, phone):
         return render_template('login.html',
                                error="Nepareizs tālruņa formāts! Jāsākas ar + un valsts kodu (piemēram, +37120000000)")
-    # =========================================================================
 
     # =========================================================================
-    # ДОБАВЛЕНО: ВАЛИДАЦИЯ REGEX ДЛЯ УДОСТОВЕРЕНИЯ ИНВАЛИДА (Строго 6 цифр)
+    # ВАЛИДАЦИЯ REGEX ДЛЯ E-MAIL
+    # =========================================================================
+    email_pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+
+    if not re.match(email_pattern, email):
+        return render_template('login.html', error="Nepareizs e-pasta formāts! Piemēram: vards@piemers.lv")
+
+    # =========================================================================
+    # ВАЛИДАЦИЯ REGEX ДЛЯ УДОСТОВЕРЕНИЯ ИНВАЛИДА (Строго 6 цифр)
     # =========================================================================
     if is_disabled:
         if not disabled_card:
             return render_template('login.html', error="Kļūda: Jāievada invalīda apliecības numurs!")
 
-        card_pattern = r"^\d{6}$"  # Регулярное выражение: ровно 6 цифр
+        card_pattern = r"^\d{6}$"
         if not re.match(card_pattern, disabled_card):
             return render_template('login.html',
                                    error="Nepareizs apliecības formāts! Jābūt taisni 6 cipariem (piem., 123456)")
     else:
-        disabled_card = None  # Если статус инвалида не выбран, обнуляем поле
-    # =========================================================================
+        disabled_card = None
 
     users = load_users()
 
@@ -178,11 +180,12 @@ def register():
     if username_key in [u.lower() for u in users.keys()]:
         return render_template('login.html', error="Šāds lietotājvārds jau eksistē!")
 
-    # Привязываем профиль с поддержкой флагов EV, Инвалидности, Номера удостоверения и Номера телефона
+    # Привязываем профиль с полной поддержкой всех полей и нового E-mail
     users[username_key] = {
         "password": password,
         "plate": plate,
-        "phone": phone,  # <-- ДОБАВЛЕНО: сохраняем номер телефона в базу данных users.json
+        "phone": phone,
+        "email": email,  # <-- ТЕПЕРЬ ГАРАНТИРОВАННО ИСПРАВЛЕНО И СОХРАНЯЕТСЯ!
         "balance": 10.0,
         "is_ev": is_ev,
         "is_disabled": is_disabled,
