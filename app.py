@@ -196,6 +196,7 @@ def register():
     session["username"] = username_key
     return redirect('/')
 
+
 @app.route('/', methods=['POST'])
 def handle_parking():
     if "username" not in session:
@@ -237,28 +238,20 @@ def handle_parking():
 
         target_spot = parking_spots[spot_number]
 
-        # ---------------------------------------------------------------------
-        # УЛУЧШЕНО: ГЛУБОКАЯ ПРОВЕРКА УДОСТОВЕРЕНИЯ ИНВАЛИДА ПРИ БРОНИРОВАНИИ
-        # ---------------------------------------------------------------------
         is_user_disabled = users[username].get("is_disabled", False)
-        # Извлекаем сохраненный номер удостоверения из базы данных пользователей
         user_disabled_card = users[username].get("disabled_card")
 
-        # Определяем, является ли выбранное место инвалидным (места 1-5)
         is_spot_disabled = (isinstance(target_spot, dict) and target_spot.get("type") == "disabled") or (
                     1 <= int(spot_number) <= 5)
 
         if is_spot_disabled:
-            # Блокируем бронирование, если нет статуса ИЛИ в базе отсутствует/пустой номер удостоверения
             if not is_user_disabled or not user_disabled_card:
                 return redirect(
                     '/?msg=Kluda: Vietas no 1 lidz 5 paredzetas tikai cilvekiem ar ipasam vajadzibam un invalidu apliecibu!')
-        # ---------------------------------------------------------------------
 
-        # Блокировка ДВС-автомобилей на зарядках EV (21-25 места) по типу и по номеру
         is_user_ev = users[username].get("is_ev", False)
         is_spot_ev = (isinstance(target_spot, dict) and target_spot.get("type") == "ev") or (
-                21 <= int(spot_number) <= 25)
+                    21 <= int(spot_number) <= 25)
         if is_spot_ev and not is_user_ev:
             return redirect('/?msg=Kluda: Vietas no 21 lidz 25 paredzetas tikai Elektroauto!')
 
@@ -272,29 +265,30 @@ def handle_parking():
                 return redirect(
                     f'/?msg=Kluda: Nepietiek lidzeklu! Vajag {total_cost:.2f} EUR, Jums ir {current_balance:.2f} EUR')
 
-            # Точечное списание баланса конкретного водителя
-            users[username]["balance"] = current_balance - total_cost
+            users[username]["balance"] = round(current_balance - total_cost, 2)
             save_users(users)
 
             now = datetime.now()
             ends_at = now + timedelta(hours=duration)
 
-            # Восстанавливаем структуру типа данных при ручных сбросах базы
             if not isinstance(parking_spots[spot_number], dict):
                 spot_id_int = int(spot_number)
                 s_type = "disabled" if spot_id_int <= 5 else ("ev" if spot_id_int > 20 else "regular")
                 parking_spots[spot_number] = {"type": s_type}
 
-            # Записываем полные данные о бронировании, включая номер документа
             parking_spots[spot_number]["status"] = {
                 "plate": current_plate,
                 "booked_at": now.strftime("%d.%m.%Y %H:%M"),
                 "duration_hours": duration,
                 "ends_at": ends_at.strftime("%d.%m.%Y %H:%M"),
-                # ДОБАВЛЕНО: привязываем номер удостоверения к активной брони места
                 "disabled_card": user_disabled_card if is_spot_disabled else None
             }
             save_data(parking_spots)
+
+            # Вызов логирования (строго на правильном уровне отступа)
+            log_transaction("[💸 PAYMENT]", username, f"Rezervēta vieta №{spot_number} uz {duration} st.",
+                            f"-{total_cost:.2f}")
+
             return redirect(f'/?msg=Veiksmigi rezervets! Samaksats: {total_cost:.2f} EUR')
         else:
             return redirect('/?msg=Vieta jau aiznemta!')
@@ -306,43 +300,57 @@ def handle_parking():
 
         if current_status is True:
             return redirect('/?msg=Vieta jau ir briva!')
+
         elif isinstance(current_status, dict) and current_status.get("plate") == current_plate:
             if isinstance(parking_spots[spot_number], dict):
                 parking_spots[spot_number]["status"] = True
             else:
                 parking_spots[spot_number] = True
             save_data(parking_spots)
+
+            log_transaction("[🚗 FREE]", username, f"Atbrīvoja vietu №{spot_number}", "0.00")
             return redirect('/?msg=Vieta veiksmigi atbrivota!')
+
         else:
             return redirect('/?msg=Kluda: Jus nevarat atbrivot svesu auto!')
 
     return redirect('/')
-
-
 @app.route('/topup', methods=['POST'])
 def topup():
-    """Пополнение баланса водителем из личного кабинета с авто-логированием"""
-    if "username" not in session:
-        return redirect('/login')
+        """Пополнение баланса водителем из личного кабинета с авто-логированием"""
+        if "username" not in session:
+            return redirect('/login')
 
-    username = session["username"]
-    try:
-        amount = float(request.form.get('amount', 0))
-        if amount <= 0:
-            return redirect('/?msg=Kluda: Summai jabut lielakai par 0!')
-    except ValueError:
-        return redirect('/?msg=Kluda: Nepareizs summas formats!')
+        username = session["username"]
+        try:
+            # ИСПРАВЛЕНО: чистим пробелы и меняем запятую на точку (защита от ввода "10,50")
+            amount_raw = request.form.get('amount', '0').strip().replace(',', '.')
+            amount = float(amount_raw)
 
-    users = load_users()
-    if username in users:
-        users[username]["balance"] = users[username].get("balance", 0.0) + amount
-        save_users(users)
+            # ИСПРАВЛЕНО: жесткое округление до двух знаков (защита от багов длинного хвоста float)
+            amount = round(amount, 2)
 
-        # Вызов красивой функции логирования
-        log_transaction("[💳 TOPUP]", username, "Papildināja savu virtuālo maku", f"+{amount:.2f}")
+            if amount <= 0:
+                return redirect('/?msg=Kluda: Summai jabut lielakai par 0!')
 
-    return redirect(f'/?msg=Balanss veiksmigi papildinats par {amount:.2f} EUR!')
+            # ЗАЩИТА: ограничиваем максимальный лимит одного пополнения
+            if amount > 1000.0:
+                return redirect('/?msg=Kluda: Maksimala viena papildinasanas summa ir 1000 EUR!')
 
+        except ValueError:
+            return redirect('/?msg=Kluda: Nepareizs summas formats!')
+
+        users = load_users()
+        if username in users:
+            # ИСПРАВЛЕНО: Безопасное сложение баланса с округлением до центов
+            current_balance = users[username].get("balance", 0.0)
+            users[username]["balance"] = round(current_balance + amount, 2)
+            save_users(users)
+
+            # Вызов красивой функции логирования
+            log_transaction("[💳 TOPUP]", username, "Papildināja savu virtuālo maku", f"+{amount:.2f}")
+
+        return redirect(f'/?msg=Balanss veiksmigi papildinats par {amount:.2f} EUR!')
 
 # =========================================================================
 # ВЕБ-ИНТЕРФЕЙС И РОУТЫ ПАНЕЛИ АДМИНИСТРАТОРА
@@ -387,7 +395,7 @@ def admin_panel():
 
     transaction_history = []
 
-    # 3. Безопасно парсим transactions.txt с извлечением реальных сумм
+    # 3. БЕЗОПАСНЫЙ ПАРСИНГ: Защита от падений и капризных эмодзи
     if os.path.exists("transactions.txt"):
         try:
             with open("transactions.txt", "r", encoding="utf-8") as f:
@@ -399,16 +407,23 @@ def admin_panel():
                     transaction_history.append(cleaned_line)
 
                     import re
+                    # Ищем только цифры и точку (игнорируем знаки + и - внутри регулярки)
                     match = re.search(r"Summa:\s*[+-]?\s*([\d.]+)", cleaned_line)
                     if match:
-                        actual_amount = float(match.group(1))
+                        try:
+                            # Функция abs() берет число по модулю (всегда делает его положительным)
+                            # Это защищает доходы от превращения в отрицательные числа
+                            actual_amount = abs(float(match.group(1)))
 
-                        if "[💸 PAYMENT]" in cleaned_line:
-                            fin_report["total_revenue"] += actual_amount
-                        elif "[⚠️ PENALTY]" in cleaned_line:
-                            fin_report["total_penalties"] += actual_amount
-                        elif "[💳 TOPUP]" in cleaned_line:
-                            fin_report["total_topups"] += actual_amount
+                            # Ищем по ключевым словам, чтобы не зависеть от скрытых символов в эмодзи
+                            if "PAYMENT" in cleaned_line:
+                                fin_report["total_revenue"] = round(fin_report["total_revenue"] + actual_amount, 2)
+                            elif "PENALTY" in cleaned_line:
+                                fin_report["total_penalties"] = round(fin_report["total_penalties"] + actual_amount, 2)
+                            elif "TOPUP" in cleaned_line:
+                                fin_report["total_topups"] = round(fin_report["total_topups"] + actual_amount, 2)
+                        except ValueError:
+                            continue  # Если строка повреждена, просто идем дальше
         except Exception:
             pass
 
