@@ -1,6 +1,6 @@
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 DATA_FILE = "parking_data.json"
 USERS_FILE = "users.json"
@@ -20,7 +20,7 @@ for i in range(1, 26):
 
 
 def load_data():
-    """Datu ielāde no JSON faila ar automātisku laika pārbaudi"""
+    """Datu ielāde no JSON faila ar automātisku laika pagarināšanu un bilances norakstīšanu"""
     parking_spots = DEFAULT_SPOTS
 
     if os.path.exists(DATA_FILE):
@@ -34,24 +34,95 @@ def load_data():
         except json.JSONDecodeError:
             parking_spots = DEFAULT_SPOTS
 
-    # --- ЛОГИКА АВТООЧИСТКИ ИСТЕКШЕЙ БРОНИ ПО ВРЕМЕНИ ПК ---
+    # =========================================================================
+    # ИНТЕЛЛЕКТУАЛЬНОЕ АВТОПРОДЛЕНИЕ И ПОЧАСОВОЕ СПИСАНИЕ С КОШЕЛЬКА
+    # =========================================================================
     now = datetime.now()
-    updated = False
+    updated_spots = False
+
+    # Загружаем базу пользователей локально, чтобы избежать циклического импорта файлов
+    if os.path.exists(USERS_FILE):
+        try:
+            with open(USERS_FILE, "r", encoding="utf-8") as f:
+                users = json.load(f)
+        except Exception:
+            users = {}
+    else:
+        users = {}
+
+    users_updated = False
 
     for spot_id, spot_val in parking_spots.items():
         if isinstance(spot_val, dict) and isinstance(spot_val.get("status"), dict):
             status_dict = spot_val["status"]
+
             if "ends_at" in status_dict:
                 try:
                     ends_at_time = datetime.strptime(status_dict["ends_at"], "%d.%m.%Y %H:%M")
-                    if now > ends_at_time:
-                        parking_spots[spot_id]["status"] = True
-                        updated = True
+
+                    # Если время вышло, но машина по-прежнему на парковке (не было выезда)
+                    while now > ends_at_time:
+                        plate = status_dict.get("plate", "")
+
+                        # Ищем владельца машины по госномеру в users.json
+                        owner_username = None
+                        for uname, udata in users.items():
+                            if udata.get("plate", "").replace("-", "").strip().upper() == plate.replace("-",
+                                                                                                        "").strip().upper():
+                                owner_username = uname
+                                break
+
+                        price_per_hour = 2.0  # Базовый тариф системы за 1 дополнительный час
+
+                        if owner_username:
+                            # Извлекаем текущий баланс водителя
+                            current_balance = users[owner_username].get("balance", 10.0)
+
+                            # Списываем деньги за просроченный час (баланс может уходить в минус как долг)
+                            users[owner_username]["balance"] = round(current_balance - price_per_hour, 2)
+                            users_updated = True
+
+                            # Сдвигаем время окончания брони ровно на 1 час вперед
+                            ends_at_time = ends_at_time + timedelta(hours=1)
+                            parking_spots[spot_id]["status"]["ends_at"] = ends_at_time.strftime("%d.%m.%Y %H:%M")
+
+                            # Увеличиваем общий счетчик оплаченных часов в сессии парковки
+                            if "duration_hours" in parking_spots[spot_id]["status"]:
+                                parking_spots[spot_id]["status"]["duration_hours"] += 1
+
+                            updated_spots = True
+
+                            # Логируем автоматическую финансовую операцию в transactions.txt
+                            try:
+                                log_time = datetime.now().strftime('%d.%m.%Y %H:%M:%S')
+                                with open("transactions.txt", "a", encoding="utf-8") as log_file:
+                                    log_file.write(
+                                        f"{log_time} [💸 AUTO_EXT] Lietotājs: {owner_username:<12} | "
+                                        f"Automātisks pagarinājums vietai Nr. {spot_id:<17} | Summa:  -{price_per_hour:.2f} EUR\n"
+                                    )
+                            except Exception:
+                                pass
+                        else:
+                            # Если это незарегистрированный гость с камеры, просто сдвигаем время сессии,
+                            # фиксируя общую продолжительность долга для постоплаты или штрафа при выезде
+                            ends_at_time = ends_at_time + timedelta(hours=1)
+                            parking_spots[spot_id]["status"]["ends_at"] = ends_at_time.strftime("%d.%m.%Y %H:%M")
+                            if "duration_hours" in parking_spots[spot_id]["status"]:
+                                parking_spots[spot_id]["status"]["duration_hours"] += 1
+                            updated_spots = True
+                            break  # Прерываем цикл для гостя, чтобы избежать бесконечного зацикливания
+
                 except ValueError:
                     pass
 
-    if updated:
-        save_data(parking_spots)
+    # Синхронизируем и перезаписываем JSON-файлы на диск при наличии изменений
+    if users_updated and users:
+        with open(USERS_FILE, "w", encoding="utf-8") as f:
+            json.dump(users, f, ensure_ascii=False, indent=4)
+
+    if updated_spots:
+        with open(DATA_FILE, "w", encoding="utf-8") as f:
+            json.dump(parking_spots, f, ensure_ascii=False, indent=4)
 
     return parking_spots
 

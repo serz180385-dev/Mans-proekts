@@ -604,16 +604,33 @@ def camera_emulator():
     if spot_id not in parking_spots:
         return redirect('/admin?msg=Kluda: Sada vieta neegziste!')
 
-    # --- СЦЕНАРИЙ 1: МАШИНА УЕХАЛА ---
+        # --- СЦЕНАРИЙ 1: МАШИНА УЕХАЛА ---
     if action == "departure":
-        if isinstance(parking_spots[spot_id], dict):
-            parking_spots[spot_id]["status"] = True
-        else:
-            parking_spots[spot_id] = True
-        save_data(parking_spots)
+            current_status = parking_spots[spot_id].get("status", True) if isinstance(parking_spots[spot_id], dict) else \
+            parking_spots[spot_id]
 
-        log_transaction("[🚗 CAM_OUT]", "system", f"AI Kamera: Auto {plate} pameta vietu Nr. {spot_id}", "0.00")
-        return redirect(f'/admin?msg=Kamera fikseja izbrauksanu! Vieta Nr. {spot_id} ir briva.')
+            # Проверяем, кто именно уезжает
+            is_guest = False
+            if isinstance(current_status, dict):
+                # Если в логе заезда стояло "system" — значит, это был неоплаченный гость
+                is_guest = True
+
+            # Освобождаем место в базе данных
+            if isinstance(parking_spots[spot_id], dict):
+                parking_spots[spot_id]["status"] = True
+            else:
+                parking_spots[spot_id] = True
+            save_data(parking_spots)
+
+            if is_guest:
+                # Выставляем автоматический штраф по латвийскому стандарту за неоплаченную парковку
+                log_transaction("[⚠️ PENALTY]", "system",
+                                f"AI Kamera: Auto {plate} aizbrauca bez apmaksas! Nosutits CSDD", "30.00")
+                return redirect(f'/admin?msg=Kamera fikseja parkapeju {plate}! Izrakstits sods 30.00 EUR.')
+            else:
+                # Обычный выезд зарегистрированного пользователя
+                log_transaction("[🚗 CAM_OUT]", "system", f"AI Kamera: Auto {plate} pameta vietu Nr. {spot_id}", "0.00")
+                return redirect(f'/admin?msg=Kamera fikseja izbrauksanu! Vieta Nr. {spot_id} ir briva.')
 
     # --- СЦЕНАРИЙ 2: МАШИНА ПРИЕХАЛА ---
     if action == "arrival":
@@ -656,7 +673,11 @@ def camera_emulator():
         return redirect(f'/admin?msg=Kamera fikseja iebrauksanu! Vieta Nr. {spot_id} aiznemta ar {plate}.')
 
     return redirect('/admin')
-
+@app.route('/logout')
+def logout():
+    """Безопасный выход пользователя из системы с очисткой сессии"""
+    session.clear()
+    return redirect('/login')
 
 if __name__ == '__main__':
     app.run(debug=True)

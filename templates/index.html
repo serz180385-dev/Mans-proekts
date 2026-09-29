@@ -276,7 +276,7 @@
 
         <div class="spot-card {% if status is sameas true or status == true or status == 'True' %}spot-free{% else %}spot-busy{% endif %}" data-spot="{{ i }}" onclick="selectSpot(this, '{{ js_status }}')">
             <span class="badge-icon badge-disabled">♿</span>
-            <div style="font-weight: 700; font-size: 16px; color: #1e293b;">№{{ i }}</div>
+            <div style="font-weight: 700; font-size: 16px; color: #1e293b;">Nr. {{ i }}</div>
             <div style="font-size: 11px; margin-top: 5px;">
                 {% if status is sameas true or status == true or status == 'True' %}
                     <span style="color: var(--success); font-weight: 700;">Brīvs</span>
@@ -305,7 +305,7 @@
                 {% set js_status = 'True' if (status is sameas true or status == true or status == "True") else spot_plate %}
 
                 <div class="spot-card {% if status is sameas true or status == true or status == 'True' %}spot-free{% else %}spot-busy{% endif %}" data-spot="{{ i }}" onclick="selectSpot(this, '{{ js_status }}')">
-                    <div style="font-weight: 700; font-size: 16px; color: #1e293b;">№{{ i }}</div>
+                    <div style="font-weight: 700; font-size: 16px; color: #1e293b;">Nr. {{ i }}</div>
                     <div style="font-size: 11px; margin-top: 5px;">
                         {% if status is sameas true or status == true or status == 'True' %}
                             <span style="color: var(--success); font-weight: 700;">Brīvs</span>
@@ -336,7 +336,7 @@
 
                 <div class="spot-card {% if status is sameas true or status == true or status == 'True' %}spot-free{% else %}spot-busy{% endif %}" data-spot="{{ i }}" onclick="selectSpot(this, '{{ js_status }}')">
                     <span class="badge-icon badge-ev">⚡</span>
-                    <div style="font-weight: 700; font-size: 16px; color: #1e293b;">№{{ i }}</div>
+                    <div style="font-weight: 700; font-size: 16px; color: #1e293b;">Nr. {{ i }}</div>
                     <div style="font-size: 11px; margin-top: 5px;">
                         {% if status is sameas true or status == true or status == 'True' %}
                             <span style="color: var(--success); font-weight: 700;">Brīvs</span>

@@ -127,7 +127,7 @@ def show_spots(current_plate):
 
     if free_count == 0 and earliest_time:
         formatted_time = earliest_time.strftime("%H:%M")
-        print(f" ⚠️ Visas vietas aizņemtas! Tuvākā brīvā būs vieta №{earliest_spot} plkst. {formatted_time}.")
+        print(f" ⚠️ Visas vietas aizņemtas! Tuvākā brīvā būs vieta Nr. {earliest_spot} plkst. {formatted_time}.")
 
     print("=" * 80)
 
@@ -209,9 +209,9 @@ def book_spot(current_user):  # <-- ИСПРАВЛЕНО: Привязка ст�
                 "ends_at": ends_at.strftime("%d.%m.%Y %H:%M")
             }
             save_data(parking_spots)
-            print(f"✅ Veiksmīgi! Samaksāts: {total_cost:.2f} EUR. Vieta №{spot_number} rezervēta līdz {ends_at.strftime('%H:%M')}.")
+            print(f"✅ Veiksmīgi! Samaksāts: {total_cost:.2f} EUR. Vieta Nr. {spot_number} rezervēta līdz {ends_at.strftime('%H:%M')}.")
         else:
-            print(f"⚠️ Atvainojiet, vieta №{spot_number} jau ir aizņemta.")
+            print(f"⚠️ Atvainojiet, vieta Nr. {spot_number} jau ir aizņemta.")
 
     except Exception as e:
         print(f"❌ Kļūda: {e}")
@@ -231,15 +231,15 @@ def free_spot(current_plate):
         current_status = target_spot.get("status", True) if isinstance(target_spot, dict) else target_spot
 
         if current_status is True:
-            print(f"⚠️ Vieta №{spot_number} jau ir brīva!")
+            print(f"⚠️ Vieta Nr. {spot_number} jau ir brīva!")
         elif isinstance(current_status, dict) and current_status.get("plate") == current_plate:
             if isinstance(parking_spots[spot_number], dict):
                 parking_spots[spot_number]["status"] = True
             else:
                 parking_spots[spot_number] = True
             save_data(parking_spots)
-            print(f"✅ Veiksmīgi! Jūs atbrīvojāt vietu №{spot_number}.")
+            print(f"✅ Veiksmīgi! Jūs atbrīvojāt vietu Nr. {spot_number}.")
         else:
-            print(f"❌ Kļūda: Jūs nevarat atbrīvot vietu №{spot_number}, jo to aizņēma c持o!")
+            print(f"❌ Kļūda: Jūs nevarat atbrīvot vietu Nr. {spot_number}, jo to aizņēma c持o!")
     except Exception as e:
         print(f"❌ Kļūda: {e}")
