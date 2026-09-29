@@ -454,32 +454,32 @@
                 </form>
             </div>
 
-            <!-- Блок Piespiedu vietu atbrīvošana (Экспресс-эвакуатор) -->
+          <!-- Блок Piespiedu vietu atbrīvošana (Экспресс-эвакуатор) -->
             <div class="card">
                 <div class="card-title">Piespiedu vietu atbrīvošana</div>
                 <div class="admin-spots-grid">
                     {% for i in range(1, 26) %}
                         {% set i_str = i|string %}
-                        {% set spot = spots[i_str] %}
-                        {% set status = spot.get('status', true) if spot is mapping else spot %}
+                        {% set spot_info = spots[i_str] %}
 
-                        {% if status is sameas true or status == true or status == "True" %}
+                        {% if not spot_info.is_occupied %}
                             <div class="admin-spot spot-free" title="Vieta ir brīva">
-                                <div style="font-weight: bold;">№{{ i }}</div>
+                                <div style="font-weight: bold;">Nr. {{ i }}</div>
                                 <div style="font-size: 9px; color: #64748b; margin-top:3px;">Brīvs</div>
                             </div>
                         {% else %}
-                            {# Безопасно извлекаем госномер машины из JSON-структуры места #}
-                            {% set spot_plate = status.plate if status is mapping else status %}
-
                             <!-- Форма для отправки POST-запроса на бэкенд для очистки места -->
                             <form action="/admin/clear-spot/{{ i }}" method="POST" style="margin:0;">
-                                <button type="submit" class="admin-spot spot-busy" style="width:100%; cursor:pointer; font-family:inherit; background:none; border:none; padding:5px 0; display:flex; flex-direction:column; align-items:center;" title="Evakuēt auto {{ spot_plate }}" onclick="return confirm('Vai tiešām vēlaties piespiedu kārtā atbrīvot vietu №{{ i }} (Auto: {{ spot_plate }})?');">
-                                    <div style="font-weight: bold; color:#1e293b;">№{{ i }}</div>
+                                <button type="submit" class="admin-spot spot-busy"
+                                        style="width:100%; cursor:pointer; font-family:inherit; background:{% if spot_info.is_overdue %}rgba(239, 68, 68, 0.08){% else %}none{% endif %}; border:{% if spot_info.is_overdue %}1px solid rgba(239, 68, 68, 0.3){% else %}none{% endif %}; padding:5px 0; display:flex; flex-direction:column; align-items:center; border-radius:6px;"
+                                        title="Evakuēt auto {{ spot_info.plate }}"
+                                        onclick="return confirm('Vai tiešām vēlaties piespiedu kārtā atbrīvot vietu Nr. {{ i }} (Auto: {{ spot_info.plate }})?');">
 
-                                    {# ВЫВОДИМ ГОСНОМЕР МАШИНЫ ДЛЯ АДМИНИСТРАТОРА #}
-                                    <div style="font-size: 11px; font-weight: 800; color: #b91c1c; background: rgba(239, 68, 68, 0.1); padding: 1px 5px; border-radius: 3px; margin-top: 2px;">
-                                        {{ spot_plate }}
+                                    <div style="font-weight: bold; color:#1e293b;">Nr. {{ i }}</div>
+
+                                    {# ВЫВОДИМ ГОСНОМЕР МАШИНЫ И ВРЕМЯ ОКОНЧАНИЯ БРОНИ ДЛЯ АДМИНИСТРАТОРА #}
+                                    <div style="font-size: 10px; font-weight: 800; color: {% if spot_info.is_overdue %}#dc2626{% else %}#1e293b{% endif %}; background: {% if spot_info.is_overdue %}rgba(220, 38, 38, 0.15){% else %}rgba(100, 116, 139, 0.1){% endif %}; padding: 2px 6px; border-radius: 4px; margin-top: 2px; text-align: center; max-width: 95%; word-break: break-word;">
+                                        {{ spot_info.text }}
                                     </div>
 
                                     <div style="font-size: 9px; color: var(--danger); font-weight:700; margin-top:3px;">❌ Atbrīvot</div>
@@ -489,6 +489,49 @@
                     {% endfor %}
                 </div> <!-- Закрываем .admin-spots-grid -->
             </div> <!-- Закрываем .card (карту эвакуатора) -->
+
+            <!-- ========================================================================= -->
+            <!-- НОВЫЙ БЛОК: ИНТЕГРАЦИЯ AI КАМЕРЫ ДЛЯ ДИПЛОМА -->
+            <!-- ========================================================================= -->
+            <div class="card" style="border: 1px dashed #10b981; margin-top: 20px;">
+                <div class="card-title" style="color: #10b981; display: flex; align-items: center; gap: 8px;">
+                    🤖 AI Kameras Emulators
+                </div>
+                <div style="font-size: 11px; color: #64748b; margin-bottom: 15px;">
+                    Imitē viedās kameras darbību diplomdarba demonstrācijai (numuru automātiska atpazīšana).
+                </div>
+
+                <form action="/admin/camera-emulator" method="POST" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div style="display: flex; gap: 10px;">
+                        <div style="flex: 1;">
+                            <label style="font-size: 10px; font-weight: 700; color: #475569; display:block; margin-bottom:4px;">Vietas Nr.:</label>
+                            <select name="spot_id" style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-family: inherit; font-size: 12px;" required>
+                                {% for i in range(1, 26) %}
+                                    <option value="{{ i }}">Nr. {{ i }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="font-size: 10px; font-weight: 700; color: #475569; display:block; margin-bottom:4px;">Auto Numurs:</label>
+                            <input type="text" name="plate" placeholder="VM1234" style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-family: inherit; font-size: 12px; text-transform: uppercase;" required>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label style="font-size: 10px; font-weight: 700; color: #475569; display:block; margin-bottom:4px;">Notikums stāvvietā:</label>
+                        <select name="action" style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-family: inherit; font-size: 12px;" required>
+                            <option value="arrival">🚘 Iebrauca stāvvietā (Приехал)</option>
+                            <option value="departure">🚗 Aizbrauca no stāvvietas (Уехал)</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" style="width: 100%; background: #10b981; color: white; border: none; padding: 8px; border-radius: 4px; font-weight: bold; cursor: pointer; font-family: inherit; font-size: 12px; margin-top: 5px; transition: background 0.2s;">
+                        Sūtīt kameras signālu
+                    </button>
+                </form>
+            </div>
+            <!-- ========================================================================= -->
+
         </div> <!-- Закрываем правую колонку -->
 
     </div> <!-- Закрываем общий контейнер .main-grid (двухколоночную сетку) -->

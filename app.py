@@ -76,7 +76,7 @@ def home():
     next_free_info = None
     if all_occupied and earliest_time:
         next_free_info = (
-            f"Visas vietas ir aizņemtas. Tuvākā brīvā būs vieta №{earliest_spot} "
+            f"Visas vietas ir aizņemtas. Tuvākā brīvā būs vieta Nr. {earliest_spot} "
             f"plkst. {earliest_time.strftime('%H:%M')}."
         )
 
@@ -231,27 +231,39 @@ def handle_parking():
                 car_already_parked = True
                 break
 
-    # === ДЕЙСТВИЕ: БРОНИРОВАНИЕ ===
+        # === ДЕЙСТВИЕ: БРОНИРОВАНИЕ ===
     if action == 'book':
         if car_already_parked:
             return redirect('/?msg=Kluda: Jusu auto jau ir novietots!')
 
         target_spot = parking_spots[spot_number]
+        spot_id_int = int(spot_number)
 
-        is_user_disabled = users[username].get("is_disabled", False)
-        user_disabled_card = users[username].get("disabled_card")
+        # Гарантируем, что мы работаем с ключом в нижнем регистре для синхронизации с базой
+        username_key = username.lower()
+        if username_key not in users:
+            return redirect('/?msg=Kluda: Lietotajs nav atrasts!')
 
-        is_spot_disabled = (isinstance(target_spot, dict) and target_spot.get("type") == "disabled") or (
-                    1 <= int(spot_number) <= 5)
+        # Извлекаем спец-статусы строго по корректному ключу
+        is_user_disabled = users[username_key].get("is_disabled", False)
+        user_disabled_card = users[username_key].get("disabled_card")
+        is_user_ev = users[username_key].get("is_ev", False)
 
+        # Определяем тип места (из структуры JSON или жестко по диапазону номеров)
+        if isinstance(target_spot, dict):
+            spot_type = target_spot.get("type", "regular")
+        else:
+            spot_type = "disabled" if spot_id_int <= 5 else ("ev" if spot_id_int > 20 else "regular")
+
+        # СТРОГАЯ ВАЛИДАЦИЯ ЗОНЫ ДЛЯ ИНВАЛИДОВ (1-5)
+        is_spot_disabled = (spot_type == "disabled") or (1 <= spot_id_int <= 5)
         if is_spot_disabled:
             if not is_user_disabled or not user_disabled_card:
                 return redirect(
                     '/?msg=Kluda: Vietas no 1 lidz 5 paredzetas tikai cilvekiem ar ipasam vajadzibam un invalidu apliecibu!')
 
-        is_user_ev = users[username].get("is_ev", False)
-        is_spot_ev = (isinstance(target_spot, dict) and target_spot.get("type") == "ev") or (
-                    21 <= int(spot_number) <= 25)
+        # СТРОГАЯ ВАЛИДАЦИЯ ЗОНЫ ЭЛЕКТРОМОБИЛЕЙ (21-25)
+        is_spot_ev = (spot_type == "ev") or (21 <= spot_id_int <= 25)
         if is_spot_ev and not is_user_ev:
             return redirect('/?msg=Kluda: Vietas no 21 lidz 25 paredzetas tikai Elektroauto!')
 
@@ -259,22 +271,21 @@ def handle_parking():
 
         if current_status is True:
             total_cost = duration * PRICE_PER_HOUR
-            current_balance = users[username].get("balance", 0.0)
+            current_balance = users[username_key].get("balance", 0.0)
 
             if current_balance < total_cost:
                 return redirect(
                     f'/?msg=Kluda: Nepietiek lidzeklu! Vajag {total_cost:.2f} EUR, Jums ir {current_balance:.2f} EUR')
 
-            users[username]["balance"] = round(current_balance - total_cost, 2)
+            # Списание средств СТРОГО со счета авторизованного пользователя с фиксацией регистра
+            users[username_key]["balance"] = round(current_balance - total_cost, 2)
             save_users(users)
 
             now = datetime.now()
             ends_at = now + timedelta(hours=duration)
 
             if not isinstance(parking_spots[spot_number], dict):
-                spot_id_int = int(spot_number)
-                s_type = "disabled" if spot_id_int <= 5 else ("ev" if spot_id_int > 20 else "regular")
-                parking_spots[spot_number] = {"type": s_type}
+                parking_spots[spot_number] = {"type": spot_type}
 
             parking_spots[spot_number]["status"] = {
                 "plate": current_plate,
@@ -286,7 +297,7 @@ def handle_parking():
             save_data(parking_spots)
 
             # Вызов логирования (строго на правильном уровне отступа)
-            log_transaction("[💸 PAYMENT]", username, f"Rezervēta vieta №{spot_number} uz {duration} st.",
+            log_transaction("[💸 PAYMENT]", username_key, f"Rezervēta vieta Nr. {spot_number} uz {duration} st.",
                             f"-{total_cost:.2f}")
 
             return redirect(f'/?msg=Veiksmigi rezervets! Samaksats: {total_cost:.2f} EUR')
@@ -308,7 +319,7 @@ def handle_parking():
                 parking_spots[spot_number] = True
             save_data(parking_spots)
 
-            log_transaction("[🚗 FREE]", username, f"Atbrīvoja vietu №{spot_number}", "0.00")
+            log_transaction("[🚗 FREE]", username, f"Atbrīvoja vietu Nr. {spot_number}", "0.00")
             return redirect('/?msg=Vieta veiksmigi atbrivota!')
 
         else:
@@ -358,6 +369,12 @@ def topup():
 from flask import send_file
 import os
 
+# =========================================================================
+# ВЕБ-ИНТЕРФЕЙС И РОУТЫ ПАНЕЛИ АДМИНИСТРАТОРА
+# =========================================================================
+from flask import send_file
+import os
+
 
 @app.route('/admin')
 def admin_panel():
@@ -373,6 +390,59 @@ def admin_panel():
         return redirect('/?msg=Kluda: Tev nav administratora tiesibu!')
 
     spots = load_data()
+
+    # =========================================================================
+    # Внедрение пункта 3: Детальное форматирование статусов парковочных мест
+    # =========================================================================
+    admin_spots_display = {}
+    for i in range(1, 26):
+        i_str = str(i)
+        spot_val = spots.get(i_str, True)
+
+        # Безопасно извлекаем статус места в зависимости от формата хранения в базе
+        status = spot_val.get("status", True) if isinstance(spot_val, dict) else spot_val
+
+        if status is True or status == "True":
+            admin_spots_display[i_str] = {
+                "text": "Brīvs",
+                "is_occupied": False,
+                "is_overdue": False,
+                "plate": ""
+            }
+        else:
+            if isinstance(status, dict):
+                plate = status.get("plate", "???")
+                ends_at_str = status.get("ends_at", "")  # Формат: "dd.mm.yyyy HH:MM"
+
+                # Обрезаем дату для компактного вывода времени, как на макете (оставляем только ЧЧ:ММ)
+                time_part = ends_at_str.split(" ")[1] if " " in ends_at_str else ends_at_str
+                display_text = f"{plate} līdz {time_part}"
+
+                # Алгоритм проверки просрочки времени парковки относительно времени сервера
+                is_overdue = False
+                if ends_at_str:
+                    try:
+                        ends_time = datetime.strptime(ends_at_str, "%d.%m.%Y %H:%M")
+                        if datetime.now() > ends_time:
+                            is_overdue = True
+                            display_text += " [KAVĒ!]"  # Пометка нарушения времени парковки
+                    except ValueError:
+                        pass
+
+                admin_spots_display[i_str] = {
+                    "text": display_text,
+                    "is_occupied": True,
+                    "is_overdue": is_overdue,
+                    "plate": plate
+                }
+            else:
+                # Резервный случай на случай обнаружения упрощённой текстовой записи госномера
+                admin_spots_display[i_str] = {
+                    "text": f"{status}",
+                    "is_occupied": True,
+                    "is_overdue": False,
+                    "plate": str(status)
+                }
 
     # 1. Самостоятельный расчет загруженности регулярной зоны в процентах
     regular_spots = [s for k, s in spots.items() if
@@ -430,11 +500,12 @@ def admin_panel():
     transaction_history.reverse()
     occupancy = {"regular": reg_occupancy}
 
+    # Возвращаем шаблон, передавая туда структурированный словарь обработанных мест admin_spots_display
     return render_template('admin.html',
                            users=users,
                            fin=fin_report,
                            occ=occupancy,
-                           spots=spots,
+                           spots=admin_spots_display,
                            transactions=transaction_history,
                            msg=request.args.get('msg'))
 
@@ -491,10 +562,10 @@ def admin_clear_spot(spot_id):
             spots[spot_id] = True
         save_data(spots)
 
-        log_transaction("[⚠️ PENALTY]", "admin", f"Piespiedu evakuācija no vietas №{spot_id} (Auto: {plate_info})",
+        log_transaction("[⚠️ PENALTY]", "admin", f"Piespiedu evakuācija no vietas Nr. {spot_id} (Auto: {plate_info})",
                         "0.00")
 
-        return redirect(f'/admin?msg=Vieta Nr.{spot_id} veiksmigi atbrivota piespiedu karta!')
+        return redirect(f'/admin?msg=Vieta Nr. {spot_id} veiksmigi atbrivota piespiedu karta!')
     return redirect('/admin?msg=Kluda: Sada vieta neegziste!')
 
 
@@ -513,11 +584,78 @@ def admin_export_report():
     return redirect('/admin?msg=Kluda: Logi ir tuksni!')
 
 
-@app.route('/logout')
-def logout():
-    """Безопасный выход пользователя из системы с очисткой сессии"""
-    session.clear()
-    return redirect('/login')
+# ВОТ СЮДА ВСТАВЛЯЕМ НАШ ЭМУЛЯТОР КАМЕРЫ ДЛЯ ДИПЛОМА:
+@app.route('/admin/camera-emulator', methods=['POST'])
+def camera_emulator():
+    """Эмулятор камеры для демонстрации диплома комиссии"""
+    if "username" not in session:
+        return redirect('/login')
+
+    users = load_users()
+    if not users.get(session["username"], {}).get("is_admin", False):
+        return redirect('/?msg=Kluda: Piekluve liegta!')
+
+    spot_id = request.form.get("spot_id", "").strip()
+    plate = request.form.get("plate", "").strip().upper()
+    action = request.form.get("action")
+
+    parking_spots = load_data()
+
+    if spot_id not in parking_spots:
+        return redirect('/admin?msg=Kluda: Sada vieta neegziste!')
+
+    # --- СЦЕНАРИЙ 1: МАШИНА УЕХАЛА ---
+    if action == "departure":
+        if isinstance(parking_spots[spot_id], dict):
+            parking_spots[spot_id]["status"] = True
+        else:
+            parking_spots[spot_id] = True
+        save_data(parking_spots)
+
+        log_transaction("[🚗 CAM_OUT]", "system", f"AI Kamera: Auto {plate} pameta vietu Nr. {spot_id}", "0.00")
+        return redirect(f'/admin?msg=Kamera fikseja izbrauksanu! Vieta Nr. {spot_id} ir briva.')
+
+    # --- СЦЕНАРИЙ 2: МАШИНА ПРИЕХАЛА ---
+    if action == "arrival":
+        if not isinstance(parking_spots[spot_id], dict):
+            parking_spots[spot_id] = {"type": "regular"}
+
+        now = datetime.now()
+        ends_at = now + timedelta(hours=1)
+
+        owner_username = "system"
+        collected_amount = "0.00"
+
+        for uname, udata in users.items():
+            db_plate = udata.get("plate", "").replace("-", "").strip().upper()
+            cam_plate = plate.replace("-", "").strip().upper()
+
+            if db_plate == cam_plate:
+                owner_username = uname
+                current_balance = udata.get("balance", 0.0)
+
+                if current_balance >= PRICE_PER_HOUR:
+                    users[uname]["balance"] = round(current_balance - PRICE_PER_HOUR, 2)
+                    save_users(users)
+                    collected_amount = f"-{PRICE_PER_HOUR:.2f}"
+                else:
+                    collected_amount = "0.00"
+                break
+
+        parking_spots[spot_id]["status"] = {
+            "plate": plate,
+            "booked_at": now.strftime("%d.%m.%Y %H:%M"),
+            "duration_hours": 1,
+            "ends_at": ends_at.strftime("%d.%m.%Y %H:%M"),
+            "disabled_card": None
+        }
+        save_data(parking_spots)
+
+        log_transaction("[💸 CAM_IN]", owner_username, f"AI Kamera: Auto {plate} ienema vietu Nr. {spot_id}",
+                        collected_amount)
+        return redirect(f'/admin?msg=Kamera fikseja iebrauksanu! Vieta Nr. {spot_id} aiznemta ar {plate}.')
+
+    return redirect('/admin')
 
 
 if __name__ == '__main__':
