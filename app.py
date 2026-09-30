@@ -604,33 +604,41 @@ def camera_emulator():
     if spot_id not in parking_spots:
         return redirect('/admin?msg=Kluda: Sada vieta neegziste!')
 
-        # --- СЦЕНАРИЙ 1: МАШИНА УЕХАЛА ---
+    # --- СЦЕНАРИЙ 1: МАШИНА УЕХАЛА ---
     if action == "departure":
-            current_status = parking_spots[spot_id].get("status", True) if isinstance(parking_spots[spot_id], dict) else \
-            parking_spots[spot_id]
+        current_status = parking_spots[spot_id].get("status", True) if isinstance(parking_spots[spot_id], dict) else \
+        parking_spots[spot_id]
 
-            # Проверяем, кто именно уезжает
-            is_guest = False
-            if isinstance(current_status, dict):
-                # Если в логе заезда стояло "system" — значит, это был неоплаченный гость
-                is_guest = True
+        is_guest = True
+        owner_username = "system"
 
-            # Освобождаем место в базе данных
-            if isinstance(parking_spots[spot_id], dict):
-                parking_spots[spot_id]["status"] = True
-            else:
-                parking_spots[spot_id] = True
-            save_data(parking_spots)
+        # КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Ищем, привязана ли уезжающая машина к какому-либо клиенту в базе
+        if isinstance(current_status, dict):
+            cam_plate = plate.replace("-", "").strip().upper()
+            for uname, udata in users.items():
+                db_plate = udata.get("plate", "").replace("-", "").strip().upper()
+                if db_plate == cam_plate:
+                    is_guest = False
+                    owner_username = uname
+                    break
 
-            if is_guest:
-                # Выставляем автоматический штраф по латвийскому стандарту за неоплаченную парковку
-                log_transaction("[⚠️ PENALTY]", "system",
-                                f"AI Kamera: Auto {plate} aizbrauca bez apmaksas! Nosutits CSDD", "30.00")
-                return redirect(f'/admin?msg=Kamera fikseja parkapeju {plate}! Izrakstits sods 30.00 EUR.')
-            else:
-                # Обычный выезд зарегистрированного пользователя
-                log_transaction("[🚗 CAM_OUT]", "system", f"AI Kamera: Auto {plate} pameta vietu Nr. {spot_id}", "0.00")
-                return redirect(f'/admin?msg=Kamera fikseja izbrauksanu! Vieta Nr. {spot_id} ir briva.')
+        # Освобождаем место в базе данных
+        if isinstance(parking_spots[spot_id], dict):
+            parking_spots[spot_id]["status"] = True
+        else:
+            parking_spots[spot_id] = True
+        save_data(parking_spots)
+
+        if is_guest:
+            # Выставляем автоматический штраф по латвийскому стандарту за неоплаченную парковку
+            log_transaction("[⚠️ PENALTY]", "system",
+                            f"AI Kamera: Auto {plate} aizbrauca bez apmaksas! Nosutits CSDD", "30.00")
+            return redirect(f'/admin?msg=Kamera fikseja parkapeju {plate}! Izrakstits sods 30.00 EUR.')
+        else:
+            # Обычный выезд зарегистрированного пользователя
+            log_transaction("[🚗 CAM_OUT]", owner_username, f"AI Kamera: Auto {plate} pameta vietu Nr. {spot_id}",
+                            "0.00")
+            return redirect(f'/admin?msg=Kamera fikseja izbrauksanu! Vieta Nr. {spot_id} ir briva.')
 
     # --- СЦЕНАРИЙ 2: МАШИНА ПРИЕХАЛА ---
     if action == "arrival":

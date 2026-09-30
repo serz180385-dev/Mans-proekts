@@ -1,14 +1,4 @@
 {
-    "Serz": {
-        "password": "123456",
-        "plate": "VR2010",
-        "balance": 19.0,
-        "is_ev": false,
-        "phone": "Nav norādīts",
-        "is_disabled": false,
-        "disabled_card": null,
-        "is_admin": false
-    },
     "serz": {
         "password": "123456",
         "plate": "VR2010",
@@ -22,7 +12,7 @@
     "sinavskis": {
         "password": "123456",
         "plate": "МК5240",
-        "balance": 10.0,
+        "balance": 8.0,
         "is_ev": false,
         "phone": "Nav norādīts",
         "is_disabled": false,
@@ -62,7 +52,7 @@
     "lora": {
         "password": "lora",
         "plate": "FI1750",
-        "balance": 8.0,
+        "balance": 100.0,
         "is_ev": false,
         "is_disabled": true,
         "disabled_card": "123456",

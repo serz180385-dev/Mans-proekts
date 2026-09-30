@@ -61,56 +61,59 @@ def load_data():
                     ends_at_time = datetime.strptime(status_dict["ends_at"], "%d.%m.%Y %H:%M")
 
                     # Если время вышло, но машина по-прежнему на парковке (не было выезда)
-                    while now > ends_at_time:
+                    if now > ends_at_time:
                         plate = status_dict.get("plate", "")
+
+                        # КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ БАГА ЗАЦИКЛИВАНИЯ:
+                        # Считаем точную разницу во времени и определяем количество просроченных часов
+                        time_delta = now - ends_at_time
+                        hours_overdue = int(time_delta.total_seconds() // 3600) + 1
 
                         # Ищем владельца машины по госномеру в users.json
                         owner_username = None
                         for uname, udata in users.items():
-                            if udata.get("plate", "").replace("-", "").strip().upper() == plate.replace("-",
-                                                                                                        "").strip().upper():
+                            if udata.get("plate", "").replace("-", "").strip().upper() == plate.replace("-", "").strip().upper():
                                 owner_username = uname
                                 break
 
                         price_per_hour = 2.0  # Базовый тариф системы за 1 дополнительный час
+                        total_overdue_cost = hours_overdue * price_per_hour
 
                         if owner_username:
                             # Извлекаем текущий баланс водителя
                             current_balance = users[owner_username].get("balance", 10.0)
 
-                            # Списываем деньги за просроченный час (баланс может уходить в минус как долг)
-                            users[owner_username]["balance"] = round(current_balance - price_per_hour, 2)
+                            # Списываем деньги за все просроченные часы сразу одной суммой
+                            users[owner_username]["balance"] = round(current_balance - total_overdue_cost, 2)
                             users_updated = True
 
-                            # Сдвигаем время окончания брони ровно на 1 час вперед
-                            ends_at_time = ends_at_time + timedelta(hours=1)
+                            # Сдвигаем время окончания брони строго на вычисленное количество часов вперед
+                            ends_at_time = ends_at_time + timedelta(hours=hours_overdue)
                             parking_spots[spot_id]["status"]["ends_at"] = ends_at_time.strftime("%d.%m.%Y %H:%M")
 
-                            # Увеличиваем общий счетчик оплаченных часов в сессии парковки
+                            # Увеличиваем счетчик оплаченных часов в сессии парковки на количество часов просрочки
                             if "duration_hours" in parking_spots[spot_id]["status"]:
-                                parking_spots[spot_id]["status"]["duration_hours"] += 1
+                                parking_spots[spot_id]["status"]["duration_hours"] += hours_overdue
 
                             updated_spots = True
 
-                            # Логируем автоматическую финансовую операцию в transactions.txt
+                            # Пишем одну красивую итоговую строчку в transactions.txt вместо бесконечных циклов
                             try:
                                 log_time = datetime.now().strftime('%d.%m.%Y %H:%M:%S')
                                 with open("transactions.txt", "a", encoding="utf-8") as log_file:
                                     log_file.write(
                                         f"{log_time} [💸 AUTO_EXT] Lietotājs: {owner_username:<12} | "
-                                        f"Automātisks pagarinājums vietai Nr. {spot_id:<17} | Summa:  -{price_per_hour:.2f} EUR\n"
+                                        f"Automātisks pagarinājums {hours_overdue} st. vietai Nr. {spot_id:<4} | Summa:  -{total_overdue_cost:.2f} EUR\n"
                                     )
                             except Exception:
                                 pass
                         else:
-                            # Если это незарегистрированный гость с камеры, просто сдвигаем время сессии,
-                            # фиксируя общую продолжительность долга для постоплаты или штрафа при выезде
-                            ends_at_time = ends_at_time + timedelta(hours=1)
+                            # Если это незарегистрированный гость с камеры, просто сдвигаем время сессии
+                            ends_at_time = ends_at_time + timedelta(hours=hours_overdue)
                             parking_spots[spot_id]["status"]["ends_at"] = ends_at_time.strftime("%d.%m.%Y %H:%M")
                             if "duration_hours" in parking_spots[spot_id]["status"]:
-                                parking_spots[spot_id]["status"]["duration_hours"] += 1
+                                parking_spots[spot_id]["status"]["duration_hours"] += hours_overdue
                             updated_spots = True
-                            break  # Прерываем цикл для гостя, чтобы избежать бесконечного зацикливания
 
                 except ValueError:
                     pass
@@ -149,12 +152,8 @@ def load_users():
                     if "balance" not in users[username]:
                         users[username]["balance"] = 10.0
 
-                    # =========================================================================
-                    # ДОБАВЛЕНО: Предохранитель для поддержки телефонных номеров старых сессий
-                    # =========================================================================
                     if "phone" not in users[username]:
                         users[username]["phone"] = "Nav norādīts"
-                    # =========================================================================
 
                     if "is_ev" not in users[username]:
                         users[username]["is_ev"] = False
