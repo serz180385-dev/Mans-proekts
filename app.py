@@ -604,16 +604,30 @@ def camera_emulator():
     if spot_id not in parking_spots:
         return redirect('/admin?msg=Kluda: Sada vieta neegziste!')
 
-    # --- СЦЕНАРИЙ 1: МАШИНА УЕХАЛА ---
+    # --- СЦЕНАРИЙ 1: МАШИНА УЕХАЛА (ОБНОВЛЕННЫЙ) ---
     if action == "departure":
-        current_status = parking_spots[spot_id].get("status", True) if isinstance(parking_spots[spot_id], dict) else \
-        parking_spots[spot_id]
+            current_status = parking_spots[spot_id].get("status", True) if isinstance(parking_spots[spot_id], dict) else \
+            parking_spots[spot_id]
 
-        is_guest = True
-        owner_username = "system"
+            # Если место и так пустое, ничего не делаем
+            if current_status is True or current_status == "True":
+                return redirect('/admin?msg=Kluda: Vieta jau ir briva!')
 
-        # КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Ищем, привязана ли уезжающая машина к какому-либо клиенту в базе
-        if isinstance(current_status, dict):
+            is_guest = True
+            owner_username = "system"
+
+            # Безопасно вытаскиваем госномер машины, которая СЕЙЧАС фактически стоит на этом месте
+            actual_parked_plate = ""
+            if isinstance(current_status, dict):
+                actual_parked_plate = current_status.get("plate", "").replace("-", "").strip().upper()
+            elif isinstance(current_status, str):
+                actual_parked_plate = current_status.replace("-", "").strip().upper()
+
+            # Принудительно используем номер машины, которая реально занимала это место
+            if actual_parked_plate:
+                plate = actual_parked_plate
+
+                # Ищем владельца уезжающей машины в базе пользователей
             cam_plate = plate.replace("-", "").strip().upper()
             for uname, udata in users.items():
                 db_plate = udata.get("plate", "").replace("-", "").strip().upper()
@@ -622,23 +636,28 @@ def camera_emulator():
                     owner_username = uname
                     break
 
-        # Освобождаем место в базе данных
-        if isinstance(parking_spots[spot_id], dict):
-            parking_spots[spot_id]["status"] = True
-        else:
-            parking_spots[spot_id] = True
-        save_data(parking_spots)
+            # СТРОГАЯ ОЧИСТКА МЕСТА С СОХРАНЕНИЕМ ЕГО ТИПА (disabled / ev / regular)
+            if isinstance(parking_spots[spot_id], dict):
+                parking_spots[spot_id]["status"] = True  # Сбрасываем только статус брони
+            else:
+                # Если структура была упрощенной, восстанавливаем правильный тип зоны
+                spot_id_int = int(spot_id)
+                s_type = "disabled" if spot_id_int <= 5 else ("ev" if spot_id_int > 20 else "regular")
+                parking_spots[spot_id] = {"status": True, "type": s_type}
 
-        if is_guest:
-            # Выставляем автоматический штраф по латвийскому стандарту за неоплаченную парковку
-            log_transaction("[⚠️ PENALTY]", "system",
-                            f"AI Kamera: Auto {plate} aizbrauca bez apmaksas! Nosutits CSDD", "30.00")
-            return redirect(f'/admin?msg=Kamera fikseja parkapeju {plate}! Izrakstits sods 30.00 EUR.')
-        else:
-            # Обычный выезд зарегистрированного пользователя
-            log_transaction("[🚗 CAM_OUT]", owner_username, f"AI Kamera: Auto {plate} pameta vietu Nr. {spot_id}",
-                            "0.00")
-            return redirect(f'/admin?msg=Kamera fikseja izbrauksanu! Vieta Nr. {spot_id} ir briva.')
+            # Гарантированная перезапись JSON-файла на диск
+            save_data(parking_spots)
+
+            if is_guest:
+                # Выставляем автоматический штраф за неоплату
+                log_transaction("[⚠️ PENALTY]", "system",
+                                f"AI Kamera: Auto {plate} aizbrauca bez apmaksas! Nosutits CSDD", "30.00")
+                return redirect(f'/admin?msg=Kamera fikseja parkapeju {plate}! Izrakstits sods 30.00 EUR.')
+            else:
+                # Обычный выезд зарегистрированного пользователя
+                log_transaction("[🚗 CAM_OUT]", owner_username, f"AI Kamera: Auto {plate} pameta vietu Nr. {spot_id}",
+                                "0.00")
+                return redirect(f'/admin?msg=Kamera fikseja izbrauksanu! Vieta Nr. {spot_id} ir briva.')
 
     # --- СЦЕНАРИЙ 2: МАШИНА ПРИЕХАЛА ---
     if action == "arrival":

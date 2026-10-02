@@ -262,7 +262,7 @@
     <!-- Карта парковочной зоны (25 мест) с исправленной структурой сеток -->
     <div class="parking-section">
 
-        <!-- 1. ЗОНА ДЛЯ ИНВАЛИДОВ -->
+       <!-- 1. ЗОНА ДЛЯ ИНВАЛИДОВ -->
 <div class="spots-grid">
     {% for i in range(1, 6) %}
         {% set i_str = i|string %}
@@ -283,7 +283,10 @@
                 {% else %}
                     {# Проверяем: принадлежит ли этот номер текущему вошедшему водителю #}
                     {% if spot_plate == current_plate %}
-                        <span style="color: #2ecc71; font-weight: bold; background: rgba(46, 204, 113, 0.1); padding: 2px 6px; border-radius: 4px;">{{ spot_plate }}</span>
+                        <span style="background: rgba(59, 130, 246, 0.08); padding: 4px 6px; border-radius: 4px; display: inline-block; border: 1px solid rgba(59, 130, 246, 0.15); width: 85%;">
+                            <strong style="color: #3b82f6; font-size: 12px;">{{ spot_plate }}</strong>
+                            <span style="font-size: 10px; font-weight: 600; color: #1e293b; display: block; margin-top: 2px; opacity: 0.95;">līdz {{ status.ends_at.split(' ')[1] if status is mapping and status.ends_at and ' ' in status.ends_at else '' }}</span>
+                        </span>
                     {% else %}
                         <span style="color: var(--danger); font-weight: 700;">Aizņemts</span>
                     {% endif %}
@@ -292,69 +295,73 @@
         </div>
     {% endfor %}
 </div>
-       <!-- 2. ОБЫЧНАЯ ЗОНА -->
-        <div class="spots-grid">
-            {% for i in range(6, 21) %}
-                {% set i_str = i|string %}
-                {% set spot = spots[i_str] %}
-                {% set status = spot.get('status', true) if spot is mapping else spot %}
 
-                {# Безопасно извлекаем госномер для проверок #}
-                {% set spot_plate = status.plate if status is mapping else status %}
-                {# Переводим статус в строку для JS, чтобы не ломать структуру HTML-тега сложным словарем #}
-                {% set js_status = 'True' if (status is sameas true or status == true or status == "True") else spot_plate %}
+<!-- 2. ОБЫЧНАЯ ЗОНА -->
+<div class="spots-grid">
+    {% for i in range(6, 21) %}
+        {% set i_str = i|string %}
+        {% set spot = spots[i_str] %}
+        {% set status = spot.get('status', true) if spot is mapping else spot %}
 
-                <div class="spot-card {% if status is sameas true or status == true or status == 'True' %}spot-free{% else %}spot-busy{% endif %}" data-spot="{{ i }}" onclick="selectSpot(this, '{{ js_status }}')">
-                    <div style="font-weight: 700; font-size: 16px; color: #1e293b;">Nr. {{ i }}</div>
-                    <div style="font-size: 11px; margin-top: 5px;">
-                        {% if status is sameas true or status == true or status == 'True' %}
-                            <span style="color: var(--success); font-weight: 700;">Brīvs</span>
-                        {% else %}
-                            {# Проверяем: принадлежит ли этот номер текущему вошедшему водителю #}
-                            {% if spot_plate == current_plate %}
-                                <span style="color: #2ecc71; font-weight: bold; background: rgba(46, 204, 113, 0.1); padding: 2px 6px; border-radius: 4px;">{{ spot_plate }}</span>
-                            {% else %}
-                                <span style="color: var(--danger); font-weight: 700;">Aizņemts</span>
-                            {% endif %}
-                        {% endif %}
-                    </div>
-                </div>
-            {% endfor %}
+        {# Безопасно извлекаем госномер для проверок #}
+        {% set spot_plate = status.plate if status is mapping else status %}
+        {# Переводим статус в строку для JS, чтобы не ломать структуру HTML-тега сложным словарем #}
+        {% set js_status = 'True' if (status is sameas true or status == true or status == "True") else spot_plate %}
+
+        <div class="spot-card {% if status is sameas true or status == true or status == 'True' %}spot-free{% else %}spot-busy{% endif %}" data-spot="{{ i }}" onclick="selectSpot(this, '{{ js_status }}')">
+            <div style="font-weight: 700; font-size: 16px; color: #1e293b;">Nr. {{ i }}</div>
+            <div style="font-size: 11px; margin-top: 5px;">
+                {% if status is sameas true or status == true or status == 'True' %}
+                    <span style="color: var(--success); font-weight: 700;">Brīvs</span>
+                {% else %}
+                    {# Проверяем: принадлежит ли этот номер текущему вошедшему водителю #}
+                    {% if spot_plate == current_plate %}
+                        <span style="background: rgba(59, 130, 246, 0.08); padding: 4px 6px; border-radius: 4px; display: inline-block; border: 1px solid rgba(59, 130, 246, 0.15); width: 85%;">
+                            <strong style="color: #3b82f6; font-size: 12px;">{{ spot_plate }}</strong>
+                            <span style="font-size: 10px; font-weight: 600; color: #1e293b; display: block; margin-top: 2px; opacity: 0.95;">līdz {{ status.ends_at.split(' ')[1] if status is mapping and status.ends_at and ' ' in status.ends_at else '' }}</span>
+                        </span>
+                    {% else %}
+                        <span style="color: var(--danger); font-weight: 700;">Aizņemts</span>
+                    {% endif %}
+                {% endif %}
+            </div>
         </div>
+    {% endfor %}
+</div>
 
-        <!-- 3. ЗОНА ЭЛЕКТРОМОБИЛЕЙ -->
-        <div class="spots-grid">
-            {% for i in range(21, 26) %}
-                {% set i_str = i|string %}
-                {% set spot = spots[i_str] %}
-                {% set status = spot.get('status', true) if spot is mapping else spot %}
+<!-- 3. ЗОНА ЭЛЕКТРОМОБИЛЕЙ -->
+<div class="spots-grid">
+    {% for i in range(21, 26) %}
+        {% set i_str = i|string %}
+        {% set spot = spots[i_str] %}
+        {% set status = spot.get('status', true) if spot is mapping else spot %}
 
-                {# Безопасно извлекаем госномер для проверок #}
-                {% set spot_plate = status.plate if status is mapping else status %}
-                {# Переводим статус в строку для JS, чтобы не ломать структуру HTML-тега сложным словарем #}
-                {% set js_status = 'True' if (status is sameas true or status == true or status == "True") else spot_plate %}
+        {# Безопасно извлекаем госномер для проверок #}
+        {% set spot_plate = status.plate if status is mapping else status %}
+        {# Переводим статус в строку для JS, чтобы не ломать структуру HTML-тега сложным словарем #}
+        {% set js_status = 'True' if (status is sameas true or status == true or status == "True") else spot_plate %}
 
-                <div class="spot-card {% if status is sameas true or status == true or status == 'True' %}spot-free{% else %}spot-busy{% endif %}" data-spot="{{ i }}" onclick="selectSpot(this, '{{ js_status }}')">
-                    <span class="badge-icon badge-ev">⚡</span>
-                    <div style="font-weight: 700; font-size: 16px; color: #1e293b;">Nr. {{ i }}</div>
-                    <div style="font-size: 11px; margin-top: 5px;">
-                        {% if status is sameas true or status == true or status == 'True' %}
-                            <span style="color: var(--success); font-weight: 700;">Brīvs</span>
-                        {% else %}
-                            {# Проверяем: принадлежит ли этот номер текущему вошедшему водителю #}
-                            {% if spot_plate == current_plate %}
-                                <span style="color: #2ecc71; font-weight: bold; background: rgba(46, 204, 113, 0.1); padding: 2px 6px; border-radius: 4px;">{{ spot_plate }}</span>
-                            {% else %}
-                                <span style="color: var(--danger); font-weight: 700;">Aizņemts</span>
-                            {% endif %}
-                        {% endif %}
-                    </div>
-                </div>
-            {% endfor %}
+        <div class="spot-card {% if status is sameas true or status == true or status == 'True' %}spot-free{% else %}spot-busy{% endif %}" data-spot="{{ i }}" onclick="selectSpot(this, '{{ js_status }}')">
+            <span class="badge-icon badge-ev">⚡</span>
+            <div style="font-weight: 700; font-size: 16px; color: #1e293b;">Nr. {{ i }}</div>
+            <div style="font-size: 11px; margin-top: 5px;">
+                {% if status is sameas true or status == true or status == 'True' %}
+                    <span style="color: var(--success); font-weight: 700;">Brīvs</span>
+                {% else %}
+                    {# Проверяем: принадлежит ли этот номер текущему вошедшему водителю #}
+                    {% if spot_plate == current_plate %}
+                        <span style="background: rgba(59, 130, 246, 0.08); padding: 4px 6px; border-radius: 4px; display: inline-block; border: 1px solid rgba(59, 130, 246, 0.15); width: 85%;">
+                            <strong style="color: #3b82f6; font-size: 12px;">{{ spot_plate }}</strong>
+                            <span style="font-size: 10px; font-weight: 600; color: #1e293b; display: block; margin-top: 2px; opacity: 0.95;">līdz {{ status.ends_at.split(' ')[1] if status is mapping and status.ends_at and ' ' in status.ends_at else '' }}</span>
+                        </span>
+                    {% else %}
+                        <span style="color: var(--danger); font-weight: 700;">Aizņemts</span>
+                    {% endif %}
+                {% endif %}
+            </div>
         </div>
-
-    </div>
-
+    {% endfor %}
+</div>
     <!-- Форма бронирования и освобождения мест (Оставляем её по центру) -->
     <div class="card">
         <div class="card-title" style="text-align: center;">Stāvvietas rezervācija</div>

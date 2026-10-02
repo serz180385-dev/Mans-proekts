@@ -42,7 +42,7 @@
     "vladimirs": {
         "password": "987654",
         "plate": "OK222",
-        "balance": 10.0,
+        "balance": 4.0,
         "is_ev": false,
         "is_disabled": false,
         "disabled_card": null,
@@ -64,7 +64,7 @@
         "plate": "VR2010",
         "phone": "Nav norādīts",
         "email": "admin@parknow.lv",
-        "balance": 24.0,
+        "balance": 22.0,
         "is_ev": false,
         "is_disabled": false,
         "disabled_card": null,
