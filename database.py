@@ -72,7 +72,8 @@ def load_data():
                         # Ищем владельца машины по госномеру в users.json
                         owner_username = None
                         for uname, udata in users.items():
-                            if udata.get("plate", "").replace("-", "").strip().upper() == plate.replace("-", "").strip().upper():
+                            if udata.get("plate", "").replace("-", "").strip().upper() == plate.replace("-",
+                                                                                                        "").strip().upper():
                                 owner_username = uname
                                 break
 
@@ -95,6 +96,8 @@ def load_data():
                             if "duration_hours" in parking_spots[spot_id]["status"]:
                                 parking_spots[spot_id]["status"]["duration_hours"] += hours_overdue
 
+                            # 🆕 ДОБАВЛЕНО: Маркер автоматического продления для отображения клиенту
+                            parking_spots[spot_id]["status"]["is_extended"] = True
                             updated_spots = True
 
                             # Пишем одну красивую итоговую строчку в transactions.txt вместо бесконечных циклов
@@ -113,6 +116,8 @@ def load_data():
                             parking_spots[spot_id]["status"]["ends_at"] = ends_at_time.strftime("%d.%m.%Y %H:%M")
                             if "duration_hours" in parking_spots[spot_id]["status"]:
                                 parking_spots[spot_id]["status"]["duration_hours"] += hours_overdue
+
+                            parking_spots[spot_id]["status"]["is_extended"] = True
                             updated_spots = True
 
                 except ValueError:

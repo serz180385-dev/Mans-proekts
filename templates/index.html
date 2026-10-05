@@ -262,7 +262,7 @@
     <!-- Карта парковочной зоны (25 мест) с исправленной структурой сеток -->
     <div class="parking-section">
 
-       <!-- 1. ЗОНА ДЛЯ ИНВАЛИДОВ -->
+  <!-- 1. ЗОНА ДЛЯ ИНВАЛИДОВ -->
 <div class="spots-grid">
     {% for i in range(1, 6) %}
         {% set i_str = i|string %}
@@ -285,7 +285,10 @@
                     {% if spot_plate == current_plate %}
                         <span style="background: rgba(59, 130, 246, 0.08); padding: 4px 6px; border-radius: 4px; display: inline-block; border: 1px solid rgba(59, 130, 246, 0.15); width: 85%;">
                             <strong style="color: #3b82f6; font-size: 12px;">{{ spot_plate }}</strong>
-                            <span style="font-size: 10px; font-weight: 600; color: #1e293b; display: block; margin-top: 2px; opacity: 0.95;">līdz {{ status.ends_at.split(' ')[1] if status is mapping and status.ends_at and ' ' in status.ends_at else '' }}</span>
+                            <span style="font-size: 10px; font-weight: 600; color: #1e293b; display: block; margin-top: 2px; opacity: 0.95;">līdz {{ status.ends_at if status is mapping and status.ends_at else '' }}</span>
+                            {% if status is mapping and (status.is_extended or (status.duration_hours and status.duration_hours > 1)) %}
+                                <span style="font-size: 10px; color: #3b82f6; font-weight: bold; display: block; margin-top: 2px;">[Pagarināts]</span>
+                            {% endif %}
                         </span>
                     {% else %}
                         <span style="color: var(--danger); font-weight: 700;">Aizņemts</span>
@@ -318,7 +321,10 @@
                     {% if spot_plate == current_plate %}
                         <span style="background: rgba(59, 130, 246, 0.08); padding: 4px 6px; border-radius: 4px; display: inline-block; border: 1px solid rgba(59, 130, 246, 0.15); width: 85%;">
                             <strong style="color: #3b82f6; font-size: 12px;">{{ spot_plate }}</strong>
-                            <span style="font-size: 10px; font-weight: 600; color: #1e293b; display: block; margin-top: 2px; opacity: 0.95;">līdz {{ status.ends_at.split(' ')[1] if status is mapping and status.ends_at and ' ' in status.ends_at else '' }}</span>
+                            <span style="font-size: 10px; font-weight: 600; color: #1e293b; display: block; margin-top: 2px; opacity: 0.95;">līdz {{ status.ends_at if status is mapping and status.ends_at else '' }}</span>
+                            {% if status is mapping and (status.is_extended or (status.duration_hours and status.duration_hours > 1)) %}
+                                <span style="font-size: 10px; color: #3b82f6; font-weight: bold; display: block; margin-top: 2px;">[Pagarināts]</span>
+                            {% endif %}
                         </span>
                     {% else %}
                         <span style="color: var(--danger); font-weight: 700;">Aizņemts</span>
@@ -352,7 +358,10 @@
                     {% if spot_plate == current_plate %}
                         <span style="background: rgba(59, 130, 246, 0.08); padding: 4px 6px; border-radius: 4px; display: inline-block; border: 1px solid rgba(59, 130, 246, 0.15); width: 85%;">
                             <strong style="color: #3b82f6; font-size: 12px;">{{ spot_plate }}</strong>
-                            <span style="font-size: 10px; font-weight: 600; color: #1e293b; display: block; margin-top: 2px; opacity: 0.95;">līdz {{ status.ends_at.split(' ')[1] if status is mapping and status.ends_at and ' ' in status.ends_at else '' }}</span>
+                            <span style="font-size: 10px; font-weight: 600; color: #1e293b; display: block; margin-top: 2px; opacity: 0.95;">līdz {{ status.ends_at if status is mapping and status.ends_at else '' }}</span>
+                            {% if status is mapping and (status.is_extended or (status.duration_hours and status.duration_hours > 1)) %}
+                                <span style="font-size: 10px; color: #3b82f6; font-weight: bold; display: block; margin-top: 2px;">[Pagarināts]</span>
+                            {% endif %}
                         </span>
                     {% else %}
                         <span style="color: var(--danger); font-weight: 700;">Aizņemts</span>
