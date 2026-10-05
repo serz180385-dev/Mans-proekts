@@ -364,16 +364,33 @@
 
         <!-- ЛЕВАЯ КОЛОНКА -->
         <div>
-            <!-- Список пользователей системы -->
-            <div class="card">
-                <div class="card-title">Reģistrētie autovadītāji un maki</div>
+            <!-- Список пользователей системы / Sistēmas lietotāju saraksts -->
+            <div class="card" style="background: #ffffff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding: 20px; border: 1px solid #e2e8f0;">
+
+                <!-- Верхняя панель карточки: заголовок и форма поиска / Paneļa augšējā daļa: virsraksts un meklēšanas forma -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                    <div class="card-title" style="font-size: 16px; font-weight: 700; color: #1e293b; margin: 0;">Reģistrētie autovadītāji un maki</div>
+
+                    <!-- Форма живого поиска на бэкенд / Dinamiskā meklēšanas forma uz aizmugursistēmu -->
+                    <form method="GET" action="/admin" style="display: flex; gap: 6px; margin: 0;">
+                        <!-- Поле ввода поискового запроса / Meklēšanas pieprasījuma ievades lauks -->
+                        <input type="text" name="search" value="{{ search_query if search_query else '' }}" placeholder="Meklēt pēc vārda, auto Nr..." style="padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; width: 220px; outline: none; transition: border 0.15s;" onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#cbd5e1'">
+                        <button type="submit" style="background: #3b82f6; color: #ffffff; border: none; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.15s;" onmouseover="this.style.backgroundColor='#2563eb'" onmouseout="this.style.backgroundColor='#3b82f6'">Meklēt</button>
+
+                        <!-- Кнопка сброса фильтра (показывается только при активном поиске) / Filtra atiestatīšanas poga (tiek rādīta tikai aktīvās meklēšanas laikā) -->
+                        {% if search_query %}
+                            <a href="/admin" style="background: #f1f5f9; color: #475569; padding: 6px 12px; border-radius: 6px; font-size: 13px; text-decoration: none; font-weight: 600; display: inline-block; line-height: 20px;">Attīrīt</a>
+                        {% endif %}
+                    </form>
+                </div>
+
+                <!-- Адаптивный контейнер таблицы водителей / Vadītāju tabulas adaptīvais konteiners -->
                 <div style="overflow-x: auto;">
                     <table>
                         <thead>
                             <tr>
                                 <th>Lietotājvārds</th>
                                 <th>Auto Numurs</th>
-                                <!-- ДОБАВЛЕНО: новые заголовки в шапку -->
                                 <th>Tālrunis</th>
                                 <th>E-pasts</th>
                                 <th>Konta Balanss</th>
@@ -381,55 +398,132 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for uname, udata in users.items() %}
-                            <tr>
-                                <td style="font-weight: 600;">{{ uname }}</td>
-                                <td><code style="background: #f1f5f9; padding: 2px 6px; border-radius:4px;">{{ udata.plate }}</code></td>
+                            <!-- Проверка наличия отфильтрованных пользователей в сессии пагинации / Pārbaude, vai paginācijas sesijā ir filtrēti lietotāji -->
+                            {% if users %}
+                                {% for uname, udata in users.items() %}
+                                <tr>
+                                    <td style="font-weight: 600;">{{ uname }}</td>
+                                    <td><code style="background: #f1f5f9; padding: 2px 6px; border-radius:4px;">{{ udata.plate }}</code></td>
+                                    <td>{{ udata.get('phone', 'Nav norādīts') }}</td>
+                                    <td style="font-size: 0.95em; color: #4b5563;">{{ udata.get('email', 'Nav norādīts') }}</td>
 
-                                <!-- ДОБАВЛЕНО: вывод контактов с сохранением адаптивности -->
-                                <td>{{ udata.get('phone', 'Nav norādīts') }}</td>
-                                <td style="font-size: 0.95em; color: #4b5563;">{{ udata.get('email', 'Nav norādīts') }}</td>
+                                    <!-- Динамический цвет баланса кошелька (красный для минуса, зелёный для плюса) / Dinamiskā maka bilances krāsa (sarkana mīnusam, zaļa plūsam) -->
+                                    <td style="font-weight: bold; color: {% if udata.balance < 0 %}#ef4444{% else %}#10b981{% endif %};">
+                                        {{ "%.2f"|format(udata.balance) }} €
+                                    </td>
 
-                                <td style="font-weight: bold; color: {% if udata.balance < 0 %}#ef4444{% else %}#10b981{% endif %};">
-                                    {{ "%.2f"|format(udata.balance) }} €
-                                </td>
-                                <td>
-                                    {% if udata.is_admin %}<span class="badge badge-admin">Admin</span>{% endif %}
-                                    {% if udata.is_disabled %}<span class="badge badge-disabled">♿ {{ udata.disabled_card if udata.disabled_card else 'Nav' }}</span>{% endif %}
-                                    {% if udata.is_ev %}<span class="badge badge-ev">⚡ EV</span>{% endif %}
-                                    {% if not udata.is_admin and not udata.is_disabled and not udata.is_ev %}—{% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
+                                    <!-- Отрисовка оригинальных бейджей специальных статусов водителя / Vadītāja īpašo statusu oriģinālo nozīmīšu (badge) attēlošana -->
+                                    <td>
+                                        {% if udata.is_admin %}<span class="badge badge-admin">Admin</span>{% endif %}
+                                        {% if udata.is_disabled %}<span class="badge badge-disabled">♿ {{ udata.disabled_card if udata.disabled_card else 'Nav' }}</span>{% endif %}
+                                        {% if udata.is_ev %}<span class="badge badge-ev">⚡ EV</span>{% endif %}
+                                        {% if not udata.is_admin and not udata.is_disabled and not udata.is_ev %}—{% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <!-- Заглушка на случай пустого результата поиска / Vietaizpildītājs tukša meklēšanas rezultāta gadījumā -->
+                                <tr>
+                                    <td colspan="6" style="padding: 20px; text-align: center; color: #94a3b8; font-weight: 600;">Nekas netika atrasts pēc Jūsu pieprasījuma.</td>
+                                </tr>
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Блок переключения страниц (Пагинация) / Lapu pārslēgšanas bloks (Paginācija) -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid #edf2f7; padding-top: 15px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                    <div style="font-size: 13px; color: #64748b;">
+                        Lapa <strong>{{ current_page if current_page else 1 }}</strong> no <strong>{{ total_pages if total_pages else 1 }}</strong>
+                    </div>
+                    <div style="display: flex; gap: 5px;">
+                        <!-- Кнопка перехода на предыдущую страницу / Poga pārejai uz iepriekšējo lapu -->
+                        <a href="/admin?page={{ (current_page if current_page else 1) - 1 }}&search={{ search_query if search_query else '' }}" style="padding: 5px 10px; border: 1px solid #cbd5e1; border-radius: 4px; color: #334155; text-decoration: none; font-size: 12px; font-weight: 600; background: #ffffff; {% if not current_page or current_page <= 1 %}opacity: 0.5; pointer-events: none;{% endif %}" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">Iepriekšējā</a>
+
+                        <!-- Кнопка перехода на следующую страницу / Poga pārejai uz nākamo lapu -->
+                        <a href="/admin?page={{ (current_page if current_page else 1) + 1 }}&search={{ search_query if search_query else '' }}" style="padding: 5px 10px; border: 1px solid #cbd5e1; border-radius: 4px; color: #334155; text-decoration: none; font-size: 12px; font-weight: 600; background: #ffffff; {% if total_pages and current_page >= total_pages %}opacity: 0.5; pointer-events: none;{% endif %}" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">Nākamā</a>
+                    </div>
+                </div>
             </div>
 
-            <!-- Лента транзакций и системных логов -->
-            <div class="card">
-                <div class="card-title">Pēdējās transakcijas un sistēmas notikumi</div>
-                <div class="transaction-log-container" style="background: #1e1e1e; color: #a9b7c6; font-family: monospace; padding: 15px; border-radius: 8px; max-height: 300px; overflow-y: auto; border: 1px solid #323232;">
+<!-- Лента транзакций и системных логов / Darījumu un sistēmas žurnālu lente -->
+            <div class="card" style="background: #ffffff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding: 20px; border: 1px solid #e2e8f0; margin-top: 20px;">
+                <div class="card-title" style="font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 15px;">Pēdējās transakcijas un sistēmas notikumi</div>
+
+                <div class="transaction-log-container" style="max-height: 400px; overflow-y: auto; border: 1px solid #edf2f7; border-radius: 6px;">
                     {% if transactions %}
-                        {% for tx in transactions %}
-                            <div class="tx-line" style="border-bottom: 1px solid #2b2b2b; padding: 4px 0; font-size: 13px; line-height: 1.4;">
-                                {% if "PAYMENT" in tx %}
-                                    <span style="color: #62b47d;">{{ tx }}</span>
-                                {% elif "TOPUP" in tx %}
-                                    <span style="color: #589df6;">{{ tx }}</span>
-                                {% elif "PENALTY" in tx %}
-                                    <span style="color: #ef4444;">{{ tx }}</span>
-                                {% else %}
-                                    <span>{{ tx }}</span>
-                                {% endif %}
-                            </div> <!-- ИСПРАВЛЕНО: Закрываем строку лога .tx-line на своём месте! -->
-                        {% endfor %}
+                        <table style="width: 100%; border-collapse: collapse; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 13px; text-align: left;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid #edf2f7; color: #64748b; font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; background: #f8fafc; position: sticky; top: 0; z-index: 10;">
+                                    <th style="padding: 12px 10px;">Laiks</th>
+                                    <th style="padding: 12px 10px;">Tips</th>
+                                    <th style="padding: 12px 10px;">Lietotājs</th>
+                                    <th style="padding: 12px 10px;">Apraksts</th>
+                                    <th style="padding: 12px 10px; text-align: right;">Summa</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for tx in transactions %}
+                                    {# Parsējam stingri formatētu rindas tekstu no faila blokos / Парсим строку из файла на блоки #}
+                                    {% if ']' in tx and '|' in tx %}
+                                        {% set parts = tx.split('|') %}
+
+                                        {# 1. Kreisā daļa (Datums, Tags, Lietotājs) / Левая часть (Дата, Тег, Юзер) #}
+                                        {% set left_side = parts[0].strip() %}
+                                        {% set date_time = left_side[:19] %}
+
+                                        {# Izgūstam taga kvadrātiekavu saturu / Извлекаем содержимое квадратных скобок тега #}
+                                        {% set tag_start = left_side.find('[') %}
+                                        {% set tag_end = left_side.find(']') %}
+                                        {% set raw_tag = left_side[tag_start+1:tag_end] if tag_start != -1 and tag_end != -1 else 'SYS' %}
+
+                                        {# Izgūstam lietotājvārdu no žurnāla ieraksta / Извлекаем имя пользователя из лога #}
+                                        {% set user_label = 'Lietotājs:' %}
+                                        {% set user_start = left_side.find(user_label) %}
+                                        {% set user_name = left_side[user_start + user_label|length:].strip() if user_start != -1 else 'system' %}
+
+                                        {# 2. Vidējā daļa (Darbības detaļas) / Средняя часть (Детали действия) #}
+                                        {% set details = parts[1].strip() if parts|length > 1 else '' %}
+
+                                        {# 3. Labā daļa (Operācijas summa) / Правая часть (Сумма операции) #}
+                                        {% set right_side = parts[2].strip() if parts|length > 2 else '' %}
+                                        {% set money = right_side.replace('Summa:', '').strip() %}
+
+                                        {# Premium Flat krāsas žurnāla nozīmītēm / Подбираем Flat-цвета для бейджей логов #}
+                                        {% set badge_bg = '#e0f2fe' %} {% set badge_color = '#0369a1' %}
+                                        {% if 'PENALTY' in raw_tag %}
+                                            {% set badge_bg = '#fee2e2' %} {% set badge_color = '#b91c1c' %}
+                                        {% elif 'PAYMENT' in raw_tag or 'AUTO_EXT' in raw_tag or 'CAM_IN' in raw_tag %}
+                                            {% set badge_bg = '#dcfce7' %} {% set badge_color = '#15803d' %}
+                                        {% elif 'FREE' in raw_tag or 'CAM_OUT' in raw_tag %}
+                                            {% set badge_bg = '#f1f5f9' %} {% set badge_color = '#475569' %}
+                                        {% endif %}
+
+                                        <!-- Tabulas rindas attēlošana / Отрисовка строки таблицы со всеми переменными -->
+                                        <tr style="border-bottom: 1px solid #f1f5f9; color: #334155; transition: background 0.15s;" onmouseover="this.style.backgroundColor='#f8fafc'" onmouseout="this.style.backgroundColor='transparent'">
+                                            <td style="padding: 10px; color: #64748b; font-family: monospace; font-size: 12px; white-space: nowrap;">{{ date_time }}</td>
+                                            <td style="padding: 10px;">
+                                                <span style="background: {{ badge_bg }}; color: {{ badge_color }}; padding: 3px 6px; border-radius: 4px; font-weight: 700; font-size: 10px; letter-spacing: 0.3px; display: inline-block;">
+                                                    {{ raw_tag }}
+                                                </span>
+                                            </td>
+                                            <td style="padding: 10px; font-weight: 600; color: #0f172a; white-space: nowrap;">{{ user_name }}</td>
+                                            <td style="padding: 10px; color: #475569; max-width: 250px; overflow: hidden; text-overflow: ellipsis;">{{ details }}</td>
+                                            <td style="padding: 10px; text-align: right; font-weight: 700; font-family: monospace; font-size: 13px; white-space: nowrap; {% if '-' in money %}color: #b91c1c;{% elif '+' in money or '30.00' in money %}color: #15803d;{% else %}color: #64748b;{% endif %}">
+                                                {{ money }}
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     {% else %}
-                        <div style="color: #808080; text-align: center; padding: 15px;">Vēsture ir tukša. Nav reģistrētu transakciju.</div>
+                        <!-- Vietaizpildītājs tukšas vēstures gadījumā / Заглушка, если файл логов пустой -->
+                        <div style="color: #808080; text-align: center; padding: 30px; font-family: sans-serif; background: #f8fafc;">Vēsture ir tukša. Nav reģistrētu transakciju.</div>
                     {% endif %}
-                </div> <!-- Закрываем контейнер лога транзакций -->
-            </div> <!-- Закрываем .card (карточку логов) -->
-        </div> <!-- Закрываем левую колонку (со списком водителей и логами) -->
+                </div>
+            </div>
+        </div> <!-- Slēdzam kreiso kolonu (.col-left) / Закрываем левую колонку строго на своём месте! -->
 
         <!-- ПРАВАЯ КОЛОНКА: Корректировка баланса и Эвакуатор мест -->
         <div>
