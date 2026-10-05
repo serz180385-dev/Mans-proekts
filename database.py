@@ -173,3 +173,16 @@ def save_users(users_data):
     """Сохранение пользователей в JSON"""
     with open(USERS_FILE, "w", encoding="utf-8") as f:
         json.dump(users_data, f, ensure_ascii=False, indent=4)
+
+
+def log_transaction(tag, user, details, amount_str):
+    """Глобальная функция красивого логирования в transactions.txt"""
+    try:
+        log_time = datetime.now().strftime('%d.%m.%Y %H:%M:%S')
+        with open("transactions.txt", "a", encoding="utf-8") as log_file:
+            log_file.write(
+                f"{log_time} {tag:<12} Lietotājs: {user:<12} | "
+                f"{details:<50} | Summa: {amount_str:>7} EUR\n"
+            )
+    except Exception:
+        pass
