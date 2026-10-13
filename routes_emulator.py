@@ -1,23 +1,31 @@
 from datetime import datetime, timedelta
-from flask import Blueprint, request, redirect, session
-from database import load_data, save_data, load_users, save_users, log_transaction  # Подключили из базы данных
+# Pievienojam flash funkciju Flask importa rindā augšā vienreizējiem paziņojumiem
+# Добавляем функцию flash в строку импорта Flask вверху файла для одноразовых уведомлений
+from flask import Blueprint, request, redirect, session, flash
+from database import load_data, save_data, load_users, save_users, log_transaction  # Pieslēgts no datu bāzes / Подключили из базы данных
 
+# AI kameras emulatora maršrutu Blueprint
 # Блупринт для эмулятора AI-камеры
 emulator_bp = Blueprint('emulator', __name__)
 
+# Tarifa konstante
 # Константа тарифа
 PRICE_PER_HOUR = 2.0
 
 
 @emulator_bp.route('/admin/camera-emulator', methods=['POST'])
 def camera_emulator():
-    """Эмулятор камеры для демонстрации диплома комиссии"""
+    """
+    Kameras emulators diploma demonstrēšanai komisijai
+    Эмулятор камеры для демонстрации диплома комиссии
+    """
     if "username" not in session:
         return redirect('/login')
 
     users = load_users()
     if not users.get(session["username"], {}).get("is_admin", False):
-        return redirect('/?msg=Kluda: Piekluve liegta!')
+        flash('Kļūda: Piekļuve liegta!')
+        return redirect('/')
 
     spot_id = request.form.get("spot_id", "").strip()
     plate = request.form.get("plate", "").strip().upper()
@@ -26,14 +34,17 @@ def camera_emulator():
     parking_spots = load_data()
 
     if spot_id not in parking_spots:
-        return redirect('/admin?msg=Kluda: Sada vieta neegziste!')
+        flash('Kļūda: Šāda vieta neeksistē!')
+        return redirect('/admin')
 
+    # --- 1. SCENĀRIJS: AUTOMAŠĪNA AIZBRAUCA ---
     # --- СЦЕНАРИЙ 1: МАШИНА УЕХАЛА ---
     if action == "departure":
         current_status = parking_spots[spot_id].get("status", True) if isinstance(parking_spots[spot_id], dict) else parking_spots[spot_id]
 
         if current_status is True or current_status == "True":
-            return redirect('/admin?msg=Kluda: Vieta jau ir briva!')
+            flash('Kļūda: Vieta jau ir brīva!')
+            return redirect('/admin')
 
         is_guest = True
         owner_username = "system"
@@ -66,11 +77,14 @@ def camera_emulator():
 
         if is_guest:
             log_transaction("[⚠️ PENALTY]", "system", f"AI Kamera: Auto {plate} aizbrauca bez apmaksas! Nosutits CSDD", "30.00")
-            return redirect(f'/admin?msg=Kamera fikseja parkapeju {plate}! Izrakstits sods 30.00 EUR.')
+            flash(f'Kamera fiksēja pārkāpēju {plate}! Izrakstīts sods 30.00 EUR.')
+            return redirect('/admin')
         else:
             log_transaction("[🚗 CAM_OUT]", owner_username, f"AI Kamera: Auto {plate} pameta vietu Nr. {spot_id}", "0.00")
-            return redirect(f'/admin?msg=Kamera fikseja izbrauksanu! Vieta Nr. {spot_id} ir briva.')
+            flash(f'Kamera fiksēja izbraukšanu! Vieta Nr. {spot_id} ir brīva.')
+            return redirect('/admin')
 
+    # --- 2. SCENĀRIJS: AUTOMAŠĪNA IEBRAUCA ---
     # --- СЦЕНАРИЙ 2: МАШИНА ПРИЕХАЛА ---
     if action == "arrival":
         if not isinstance(parking_spots[spot_id], dict):
@@ -108,6 +122,7 @@ def camera_emulator():
         save_data(parking_spots)
 
         log_transaction("[💸 CAM_IN]", owner_username, f"AI Kamera: Auto {plate} ienema vietu Nr. {spot_id}", collected_amount)
-        return redirect(f'/admin?msg=Kamera fikseja iebrauksanu! Vieta Nr. {spot_id} aiznemta ar {plate}.')
+        flash(f'Kamera fiksēja iebraukšanu! Vieta Nr. {spot_id} aizņemta ar {plate}.')
+        return redirect('/admin')
 
     return redirect('/admin')

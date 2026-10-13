@@ -191,12 +191,12 @@
         <div id="tab-register" class="tab" onclick="switchTab('register')">Reģistrācija</div>
     </div>
 
-    <!-- Вывод ошибок от Flask -->
+    <!-- Flask kļūdu izvade  / Вывод ошибок от Flask -->
     {% if error %}
         <div class="error-box">{{ error }}</div>
     {% endif %}
 
-    <!-- ФОРМА АВТОРИЗАЦИИ -->
+    <!-- AUTORIZĀCIJAS FORMA / ФОРМА АВТОРИЗАЦИИ  -->
     <div id="login-form" class="form-content active">
         <form action="/login" method="POST">
             <div class="form-group">
@@ -214,7 +214,7 @@
         </div>
     </div>
 
-    <!-- ФОРМА РЕГИСТРАЦИИ -->
+    <!-- REĢISTRĀCIJAS FORMA / ФОРМА РЕГИСТРАЦИИ -->
     <div id="register-form" class="form-content">
         <form action="/register" method="POST">
             <div class="form-group">
@@ -231,14 +231,14 @@
             </div>
 
             <!-- ========================================================================= -->
-            <!-- ДОБАВЛЕНО: Поле ввода мобильного телефона с кодом страны -->
+            <!-- PIEVIENOTS: Mobilā tālruņa ievades lauks ar valsts kodu / ДОБАВЛЕНО: Поле ввода мобильного телефона с кодом страны -->
             <!-- ========================================================================= -->
             <div class="form-group">
                 <label for="reg-phone">Tālruņa numurs</label>
                 <input type="text" id="reg-phone" name="phone" placeholder="Piemēram, +37120000000" required autocomplete="off">
             </div>
             <!-- ========================================================================= -->
-            <!-- ДОБАВЛЕНО: Поле ввода E-mail -->
+            <!-- PIEVIENOTS: E-pasta ievades lauks / ДОБАВЛЕНО: Поле ввода E-mail -->
             <div class="form-group">
                 <label for="reg-email">E-pasts</label>
                 <input type="text" id="reg-email" name="email" placeholder="Piemēram, vards@piemers.lv" required autocomplete="off">
@@ -248,7 +248,7 @@
                 <label>Īpašie statusi (pēc izvēles)</label>
                 <div class="checkbox-group">
                     <label class="checkbox-item">
-                        <!-- ДОБАВЛЕНО: id="disabled_trigger" и событие onchange -->
+                        <!-- PIEVIENOTS: id="disabled_trigger" un onchange notikums /  ДОБАВЛЕНО: id="disabled_trigger" и событие onchange -->
                         <input type="checkbox" name="is_disabled" id="disabled_trigger" onchange="toggleDisabledCardField()">
                         <span>♿ Cilvēkiem ar īpašām vajadzībām</span>
                     </label>
@@ -260,7 +260,7 @@
             </div>
 
             <!-- ========================================================================= -->
-            <!-- ДОБАВЛЕНО: Динамическое поле ввода номера удостоверения инвалида -->
+            <!-- PIEVIENOTS: Dinamisks invalīda apliecības numura ievades lauks / ДОБАВЛЕНО: Динамическое поле ввода номера удостоверения инвалида -->
             <!-- ========================================================================= -->
             <div class="form-group" id="disabled_card_group" style="display: none; margin-top: 10px;">
                 <label for="reg-disabled-card">Invalīda apliecības numurs (6 cipari)</label>
@@ -277,7 +277,7 @@
 </div>
 
 <!-- ========================================================================= -->
-<!-- ДОБАВЛЕНО: Скрипт переключения видимости поля удостоверения -->
+<!-- PIEVIENOTS: Skripts apliecības lauka redzamības pārslēgšanai / ДОБАВЛЕНО: Скрипт переключения видимости поля удостоверения -->
 <!-- ========================================================================= -->
 <script>
 function toggleDisabledCardField() {
@@ -287,26 +287,26 @@ function toggleDisabledCardField() {
 
     if (checkbox && cardGroup && cardInput) {
         if (checkbox.checked) {
-            cardGroup.style.display = 'block'; // Плавно показываем поле
-            cardInput.required = true;         // Делаем поле обязательным для отправки во Flask
-            cardInput.focus();                 // Сразу ставим туда курсор для удобства ввода
+            cardGroup.style.display = 'block'; // Plūstoši parādām lauku / Плавно показываем поле
+            cardInput.required = true;         // Padarām lauku obligātu nosūtīšanai uz Flask / Делаем поле обязательным для отправки во Flask
+            cardInput.focus();                 // Uzreiz novietojam tur kursoru ievades ērtībai /  Сразу ставим туда курсор для удобства ввода
         } else {
-            cardGroup.style.display = 'none';  // Прячем поле обратно
-            cardInput.required = false;        // Убираем обязательность
-            cardInput.value = '';              // Стираем текст, если пользователь снял галочку
+            cardGroup.style.display = 'none';  // Paslēpjam lauku atpakaļ / Прячем поле обратно
+            cardInput.required = false;        // Noņemam obligātumu / Убираем обязательность
+            cardInput.value = '';              // Dzēšam tekstu, ja lietotājs noņēma atzīmi / Стираем текст, если пользователь снял галочку
         }
     }
 }
 </script>
 
 <script>
-    // Скрипт переключения вкладок
+    // Skripts cilņu (tabu) pārslēgšanai / Скрипт переключения вкладок
     function switchTab(mode) {
-        // Элементы форм
+        // Formas elementi / Элементы форм
         const loginForm = document.getElementById('login-form');
         const registerForm = document.getElementById('register-form');
 
-        // Элементы вкладок
+        // Cilņu (tabu) elementi / Элементы вкладок
         const tabLogin = document.getElementById('tab-login');
         const tabRegister = document.getElementById('tab-register');
 

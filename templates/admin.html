@@ -319,7 +319,7 @@
 <body>
 
 <div class="container">
-    <!-- Шапка панели -->
+    <!-- Paneļa galvene --> <!-- Шапка панели -->
     <div class="header">
         <div class="logo">PARK<span>NOW</span> 🛠️ ADMIN</div>
         <div>
@@ -328,63 +328,76 @@
         </div>
     </div>
 
-    <!-- Уведомления системы -->
-    {% if msg %}
-        <div class="alert" id="system-alert">{{ msg }}</div>
-        <script>
-            setTimeout(() => {
-                const alertBlock = document.getElementById('system-alert');
-                if(alertBlock) alertBlock.style.display = 'none';
-            }, 5000);
-        </script>
+   {# Sistēmas paziņojumi / Vienreizējo ziņojumu izvades bloks #}
+{# Уведомления системы / Блок вывода одноразовых сообщений #}
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert" id="system-alert-{{ loop.index }}">{{ message }}</div>
+            <script>
+                setTimeout(() => {
+                    const alertBlock = document.getElementById("system-alert-{{ loop.index }}");
+                    if (alertBlock) alertBlock.style.display = 'none';
+                }, 5000);
+            </script>
+        {% endfor %}
     {% endif %}
+{% endwith %}
+    <!-- FINANŠU STATISTIKAS KARTĪTES / ФИНАНСОВЫЕ КАРТОЧКИ СТАТИСТИКИ -->
+        <div class="stats-container" style="display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap;">
 
-    <!-- Информационные виджеты статистики -->
-    <div class="stats-grid">
-        <div class="stat-card" style="border-top-color: #10b981;">
-            <div class="stat-title">Rezervāciju ieņēmumi</div>
-            <div class="stat-value">{{ "%.2f"|format(fin.total_revenue) }} €</div>
-        </div>
-        <div class="stat-card" style="border-top-color: #ef4444;">
-            <div class="stat-title">Iekasētie sodi</div>
-            <div class="stat-value">{{ "%.2f"|format(fin.total_penalties) }} €</div>
-        </div>
-        <div class="stat-card" style="border-top-color: #3b82f6;">
-            <div class="stat-title">Kopējie maku top-up</div>
-            <div class="stat-value">{{ "%.2f"|format(fin.total_topups) }} €</div>
-        </div>
-        <div class="stat-card" style="border-top-color: #f59e0b;">
-            <div class="stat-title">Zonu nosodze (Regular)</div>
-            <div class="stat-value">{{ occ.regular }}%</div>
-        </div>
-    </div>
+            <!--1. Ieņēmumu kartīte / 1. Карточка доходов -->
+            <div class="stat-card" style="flex: 1; min-width: 220px; background: #ffffff; border-radius: 8px; padding: 15px; border: 1px solid #e2e8f0; border-top: 4px solid #10b981;">
+                <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Ieņēmumi no rezervācijām</div>
+                <div style="font-size: 20px; font-weight: 700; color: #0f172a; margin-top: 5px;">{{ "%.2f"|format(fin.total_revenue) }} €</div>
+            </div>
 
-    <!-- Основной блок (Сетка из двух колонок) -->
+            <!--2. Sodu kartīte / 2. Карточка штрафов -->
+            <div class="stat-card" style="flex: 1; min-width: 220px; background: #ffffff; border-radius: 8px; padding: 15px; border: 1px solid #e2e8f0; border-top: 4px solid #ef4444;">
+                <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Iekasētie sodi</div>
+                <div style="font-size: 20px; font-weight: 700; color: #0f172a; margin-top: 5px;">{{ "%.2f"|format(fin.total_penalties) }} €</div>
+            </div>
+
+            <!--3. Papildinājumu kartīte / 3. Карточка пополнений -->
+            <div class="stat-card" style="flex: 1; min-width: 220px; background: #ffffff; border-radius: 8px; padding: 15px; border: 1px solid #e2e8f0; border-top: 4px solid #3b82f6;">
+                <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Kopējie kontu papildinājumi</div>
+                <div style="font-size: 20px; font-weight: 700; color: #0f172a; margin-top: 5px;">{{ "%.2f"|format(fin.total_topups) }} €</div>
+            </div>
+
+            <!--4. Noslodzes kartīte / 4. Карточка загруженности-->
+            <div class="stat-card" style="flex: 1; min-width: 220px; background: #ffffff; border-radius: 8px; padding: 15px; border: 1px solid #e2e8f0; border-top: 4px solid #f59e0b;">
+                <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Parastās zonas noslodze</div>
+                <div style="font-size: 20px; font-weight: 700; color: #0f172a; margin-top: 5px;">{{ occ.regular }}%</div>
+            </div>
+
+        </div>
+
+    <!-- Galvenais bloks (Divu kolonnu režģis) --> <!-- Основной блок (Сетка из двух колонок) -->
     <div class="main-grid">
 
-        <!-- ЛЕВАЯ КОЛОНКА -->
+       <!-- KREISĀ KOLONNA --> <!-- ЛЕВАЯ КОЛОНКА -->
         <div>
-            <!-- Список пользователей системы / Sistēmas lietotāju saraksts -->
+            <!--Sistēmas lietotāju saraksts / Список пользователей системы -->
             <div class="card" style="background: #ffffff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding: 20px; border: 1px solid #e2e8f0;">
 
-                <!-- Верхняя панель карточки: заголовок и форма поиска / Paneļa augšējā daļa: virsraksts un meklēšanas forma -->
+                <!--Paneļa augšējā daļa: virsraksts un meklēšanas forma / Верхняя панель карточки: заголовок и форма поиска -->
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
                     <div class="card-title" style="font-size: 16px; font-weight: 700; color: #1e293b; margin: 0;">Reģistrētie autovadītāji un maki</div>
 
-                    <!-- Форма живого поиска на бэкенд / Dinamiskā meklēšanas forma uz aizmugursistēmu -->
+                    <!-- Dinamiskā meklēšanas forma uz aizmugursistēmu / Форма живого поиска на бэкенд -->
                     <form method="GET" action="/admin" style="display: flex; gap: 6px; margin: 0;">
                         <!-- Поле ввода поискового запроса / Meklēšanas pieprasījuma ievades lauks -->
                         <input type="text" name="search" value="{{ search_query if search_query else '' }}" placeholder="Meklēt pēc vārda, auto Nr..." style="padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; width: 220px; outline: none; transition: border 0.15s;" onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#cbd5e1'">
                         <button type="submit" style="background: #3b82f6; color: #ffffff; border: none; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.15s;" onmouseover="this.style.backgroundColor='#2563eb'" onmouseout="this.style.backgroundColor='#3b82f6'">Meklēt</button>
 
-                        <!-- Кнопка сброса фильтра (показывается только при активном поиске) / Filtra atiestatīšanas poga (tiek rādīta tikai aktīvās meklēšanas laikā) -->
+                        <!-- Filtra atiestatīšanas poga (tiek rādīta tikai aktīvās meklēšanas laikā) / Кнопка сброса фильтра (показывается только при активном поиске) -->
                         {% if search_query %}
                             <a href="/admin" style="background: #f1f5f9; color: #475569; padding: 6px 12px; border-radius: 6px; font-size: 13px; text-decoration: none; font-weight: 600; display: inline-block; line-height: 20px;">Attīrīt</a>
                         {% endif %}
                     </form>
                 </div>
 
-                <!-- Адаптивный контейнер таблицы водителей / Vadītāju tabulas adaptīvais konteiners -->
+                <!--Vadītāju tabulas adaptīvais konteiners / Адаптивный контейнер таблицы водителей -->
                 <div style="overflow-x: auto;">
                     <table>
                         <thead>
@@ -398,7 +411,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <!-- Проверка наличия отфильтрованных пользователей в сессии пагинации / Pārbaude, vai paginācijas sesijā ir filtrēti lietotāji -->
+                            <!-- Pārbaude, vai paginācijas sesijā ir filtrēti lietotāji / Проверка наличия отфильтрованных пользователей в сессии пагинации -->
                             {% if users %}
                                 {% for uname, udata in users.items() %}
                                 <tr>
@@ -407,12 +420,12 @@
                                     <td>{{ udata.get('phone', 'Nav norādīts') }}</td>
                                     <td style="font-size: 0.95em; color: #4b5563;">{{ udata.get('email', 'Nav norādīts') }}</td>
 
-                                    <!-- Динамический цвет баланса кошелька (красный для минуса, зелёный для плюса) / Dinamiskā maka bilances krāsa (sarkana mīnusam, zaļa plūsam) -->
+                                    <!--Dinamiskā maka bilances krāsa (sarkana mīnusam, zaļa plūsam) / Динамический цвет баланса кошелька (красный для минуса, зелёный для плюса) -->
                                     <td style="font-weight: bold; color: {% if udata.balance < 0 %}#ef4444{% else %}#10b981{% endif %};">
                                         {{ "%.2f"|format(udata.balance) }} €
                                     </td>
 
-                                    <!-- Отрисовка оригинальных бейджей специальных статусов водителя / Vadītāja īpašo statusu oriģinālo nozīmīšu (badge) attēlošana -->
+                                    <!--Vadītāja īpašo statusu oriģinālo nozīmīšu (badge) attēlošana / Отрисовка оригинальных бейджей специальных статусов водителя -->
                                     <td>
                                         {% if udata.is_admin %}<span class="badge badge-admin">Admin</span>{% endif %}
                                         {% if udata.is_disabled %}<span class="badge badge-disabled">♿ {{ udata.disabled_card if udata.disabled_card else 'Nav' }}</span>{% endif %}
@@ -422,7 +435,7 @@
                                 </tr>
                                 {% endfor %}
                             {% else %}
-                                <!-- Заглушка на случай пустого результата поиска / Vietaizpildītājs tukša meklēšanas rezultāta gadījumā -->
+                                <!--Vietaizpildītājs tukša meklēšanas rezultāta gadījumā / Заглушка на случай пустого результата поиска  -->
                                 <tr>
                                     <td colspan="6" style="padding: 20px; text-align: center; color: #94a3b8; font-weight: 600;">Nekas netika atrasts pēc Jūsu pieprasījuma.</td>
                                 </tr>
@@ -431,22 +444,22 @@
                     </table>
                 </div>
 
-                <!-- Блок переключения страниц (Пагинация) / Lapu pārslēgšanas bloks (Paginācija) -->
+                <!--Lapu pārslēgšanas bloks (Paginācija) / Блок переключения страниц (Пагинация) -->
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid #edf2f7; padding-top: 15px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
                     <div style="font-size: 13px; color: #64748b;">
                         Lapa <strong>{{ current_page if current_page else 1 }}</strong> no <strong>{{ total_pages if total_pages else 1 }}</strong>
                     </div>
                     <div style="display: flex; gap: 5px;">
-                        <!-- Кнопка перехода на предыдущую страницу / Poga pārejai uz iepriekšējo lapu -->
+                        <!-- Poga pārejai uz iepriekšējo lapu / Кнопка перехода на предыдущую страницу -->
                         <a href="/admin?page={{ (current_page if current_page else 1) - 1 }}&search={{ search_query if search_query else '' }}" style="padding: 5px 10px; border: 1px solid #cbd5e1; border-radius: 4px; color: #334155; text-decoration: none; font-size: 12px; font-weight: 600; background: #ffffff; {% if not current_page or current_page <= 1 %}opacity: 0.5; pointer-events: none;{% endif %}" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">Iepriekšējā</a>
 
-                        <!-- Кнопка перехода на следующую страницу / Poga pārejai uz nākamo lapu -->
+                        <!-- Poga pārejai uz nākamo lapu / Кнопка перехода на следующую страницу  -->
                         <a href="/admin?page={{ (current_page if current_page else 1) + 1 }}&search={{ search_query if search_query else '' }}" style="padding: 5px 10px; border: 1px solid #cbd5e1; border-radius: 4px; color: #334155; text-decoration: none; font-size: 12px; font-weight: 600; background: #ffffff; {% if total_pages and current_page >= total_pages %}opacity: 0.5; pointer-events: none;{% endif %}" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">Nākamā</a>
                     </div>
                 </div>
             </div>
 
-<!-- Лента транзакций и системных логов / Darījumu un sistēmas žurnālu lente -->
+<!--Darījumu un sistēmas žurnālu lente / Лента транзакций и системных логов  -->
             <div class="card" style="background: #ffffff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding: 20px; border: 1px solid #e2e8f0; margin-top: 20px;">
                 <div class="card-title" style="font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 15px;">Pēdējās transakcijas un sistēmas notikumi</div>
 
@@ -499,7 +512,7 @@
                                             {% set badge_bg = '#f1f5f9' %} {% set badge_color = '#475569' %}
                                         {% endif %}
 
-                                        <!-- Tabulas rindas attēlošana / Отрисовка строки таблицы со всеми переменными -->
+                                        <!-- Отрисовка строки таблицы со всеми переменными / Tabulas rindas attēlošana  -->
                                         <tr style="border-bottom: 1px solid #f1f5f9; color: #334155; transition: background 0.15s;" onmouseover="this.style.backgroundColor='#f8fafc'" onmouseout="this.style.backgroundColor='transparent'">
                                             <td style="padding: 10px; color: #64748b; font-family: monospace; font-size: 12px; white-space: nowrap;">{{ date_time }}</td>
                                             <td style="padding: 10px;">
@@ -525,9 +538,9 @@
             </div>
         </div> <!-- Slēdzam kreiso kolonu (.col-left) / Закрываем левую колонку строго на своём месте! -->
 
-        <!-- ПРАВАЯ КОЛОНКА: Корректировка баланса и Эвакуатор мест -->
+        <!-- LABĀ KOLONNA: Balansa korekcija un Evakuatora izsaukšana / ПРАВАЯ КОЛОНКА: Корректировка баланса и Эвакуатор мест -->
         <div>
-            <!-- Форма корректировки баланса -->
+            <!-- Balansa korekcijas forma / Форма корректировки баланса -->
             <div class="card">
                 <div class="card-title">Korektēt lietotāja bilanci</div>
                 <form action="/admin/topup-user" method="POST">
@@ -562,7 +575,7 @@
                                 <div style="font-size: 9px; color: #64748b; margin-top:3px;">Brīvs</div>
                             </div>
                         {% else %}
-                            <!-- Форма для отправки POST-запроса на бэкенд для очистки места -->
+                            <!--Forma POST pieprasījuma nosūtīšanai uz aizmugursistēmu (backend) vietas atbrīvošanai / Форма для отправки POST-запроса на бэкенд для очистки места -->
                             <form action="/admin/clear-spot/{{ i }}" method="POST" style="margin:0;">
                                 <button type="submit" class="admin-spot spot-busy"
                                         style="width:100%; cursor:pointer; font-family:inherit; background:{% if spot_info.is_overdue %}rgba(239, 68, 68, 0.08){% else %}none{% endif %}; border:{% if spot_info.is_overdue %}1px solid rgba(239, 68, 68, 0.3){% else %}none{% endif %}; padding:5px 0; display:flex; flex-direction:column; align-items:center; border-radius:6px;"
@@ -571,7 +584,7 @@
 
                                     <div style="font-weight: bold; color:#1e293b;">Nr. {{ i }}</div>
 
-                                    {# ВЫВОДИМ ГОСНОМЕР МАШИНЫ И ВРЕМЯ ОКОНЧАНИЯ БРОНИ ДЛЯ АДМИНИСТРАТОРА #}
+                                    {# ADMINISTRATORAM: ATTĒLOJAM AUTO VALSTS REĢISTRĀCIJAS NUMURU UN REZERVĀCIJAS BEIGU LAIKU / ВЫВОДИМ ГОСНОМЕР МАШИНЫ И ВРЕМЯ ОКОНЧАНИЯ БРОНИ ДЛЯ АДМИНИСТРАТОРА #}
                                     <div style="font-size: 10px; font-weight: 800; color: {% if spot_info.is_overdue %}#dc2626{% else %}#1e293b{% endif %}; background: {% if spot_info.is_overdue %}rgba(220, 38, 38, 0.15){% else %}rgba(100, 116, 139, 0.1){% endif %}; padding: 2px 6px; border-radius: 4px; margin-top: 2px; text-align: center; max-width: 95%; word-break: break-word;">
                                         {{ spot_info.text }}
                                     </div>
@@ -581,11 +594,11 @@
                             </form>
                         {% endif %}
                     {% endfor %}
-                </div> <!-- Закрываем .admin-spots-grid -->
-            </div> <!-- Закрываем .card (карту эвакуатора) -->
+                </div> <!-- oslēdzam .admin-spots-grid / Закрываем .admin-spots-grid -->
+            </div> <!-- Noslēdzam .card (evakuatora kartīti) / Закрываем .card (карту эвакуатора) -->
 
             <!-- ========================================================================= -->
-            <!-- НОВЫЙ БЛОК: ИНТЕГРАЦИЯ AI КАМЕРЫ ДЛЯ ДИПЛОМА -->
+            <!-- JAUNS BLOKS: AI KAMERAS INTEGRĀCIJA DIPLOMDARBAM / НОВЫЙ БЛОК: ИНТЕГРАЦИЯ AI КАМЕРЫ ДЛЯ ДИПЛОМА -->
             <!-- ========================================================================= -->
             <div class="card" style="border: 1px dashed #10b981; margin-top: 20px;">
                 <div class="card-title" style="color: #10b981; display: flex; align-items: center; gap: 8px;">
@@ -626,10 +639,10 @@
             </div>
             <!-- ========================================================================= -->
 
-        </div> <!-- Закрываем правую колонку -->
+        </div> <!--oslēdzam labo kolonnu / Закрываем правую колонку -->
 
-    </div> <!-- Закрываем общий контейнер .main-grid (двухколоночную сетку) -->
-</div> <!-- Закрываем главный .container -->
+    </div> <!-- Noslēdzam kopējo konteineru .main-grid (divu kolonnu režģi) / Закрываем общий контейнер .main-grid (двухколоночную сетку) -->
+</div> <!-- Noslēdzam galveno .container / Закрываем главный .container -->
 
 </body>
 </html>

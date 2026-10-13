@@ -15,3 +15,23 @@
 02.10.2026 13:50:25 [🚗 CAM_OUT]  Lietotājs: vladimirs    | AI Kamera: Auto OK222 pameta vietu Nr. 10          | Summa:    0.00 EUR
 02.10.2026 13:51:07 [💸 PAYMENT]  Lietotājs: admin        | Rezervēta vieta Nr. 12 uz 1 st.                    | Summa:   -2.00 EUR
 02.10.2026 13:51:34 [💸 CAM_IN]   Lietotājs: vladimirs    | AI Kamera: Auto OK222 ienema vietu Nr. 9           | Summa:   -2.00 EUR
+05.10.2026 15:21:25 [💸 AUTO_EXT] Lietotājs: vladimirs    | Automātisks pagarinājums 73 st. vietai Nr. 9    | Summa:  -146.00 EUR
+05.10.2026 15:21:25 [💸 AUTO_EXT] Lietotājs: serz         | Automātisks pagarinājums 73 st. vietai Nr. 12   | Summa:  -146.00 EUR
+05.10.2026 15:22:02 [🚗 FREE]     Lietotājs: serz         | Atbrīvoja vietu Nr. 12                             | Summa:    0.00 EUR
+05.10.2026 15:23:36 [🚗 CAM_OUT]  Lietotājs: vladimirs    | AI Kamera: Auto OK222 pameta vietu Nr. 9           | Summa:    0.00 EUR
+05.10.2026 15:24:13 [💸 CAM_IN]   Lietotājs: zanna        | AI Kamera: Auto DZ6196 ienema vietu Nr. 11         | Summa:   -2.00 EUR
+05.10.2026 15:24:54 [🚗 CAM_OUT]  Lietotājs: zanna        | AI Kamera: Auto DZ6196 pameta vietu Nr. 11         | Summa:    0.00 EUR
+13.10.2026 15:35:59 [💸 PAYMENT]  Lietotājs: admin        | Rezervēta vieta Nr. 6 uz 1 st.                     | Summa:   -2.00 EUR
+13.10.2026 15:36:04 [🚗 FREE]     Lietotājs: admin        | Atbrīvoja vietu Nr. 6                              | Summa:    0.00 EUR
+13.10.2026 15:37:41 [💸 PAYMENT]  Lietotājs: admin        | Rezervēta vieta Nr. 6 uz 1 st.                     | Summa:   -2.00 EUR
+13.10.2026 15:38:00 [🚗 FREE]     Lietotājs: admin        | Atbrīvoja vietu Nr. 6                              | Summa:    0.00 EUR
+13.10.2026 15:38:07 [💸 PAYMENT]  Lietotājs: admin        | Rezervēta vieta Nr. 7 uz 1 st.                     | Summa:   -2.00 EUR
+13.10.2026 15:38:24 [💸 CAM_IN]   Lietotājs: vladimirs    | AI Kamera: Auto OK222 ienema vietu Nr. 7           | Summa:   -2.00 EUR
+13.10.2026 15:38:41 [🚗 CAM_OUT]  Lietotājs: vladimirs    | AI Kamera: Auto OK222 pameta vietu Nr. 7           | Summa:    0.00 EUR
+13.10.2026 15:51:15 [💸 CAM_IN]   Lietotājs: vladimirs    | AI Kamera: Auto OK222 ienema vietu Nr. 7           | Summa:   -2.00 EUR
+13.10.2026 15:51:25 [🚗 CAM_OUT]  Lietotājs: vladimirs    | AI Kamera: Auto OK222 pameta vietu Nr. 7           | Summa:    0.00 EUR
+13.10.2026 15:54:16 [💸 PAYMENT]  Lietotājs: admin        | Rezervēta vieta Nr. 6 uz 1 st.                     | Summa:   -2.00 EUR
+13.10.2026 15:54:20 [🚗 FREE]     Lietotājs: admin        | Atbrīvoja vietu Nr. 6                              | Summa:    0.00 EUR
+13.10.2026 15:54:31 [💸 CAM_IN]   Lietotājs: sinavskis    | AI Kamera: Auto МК5240 ienema vietu Nr. 7          | Summa:   -2.00 EUR
+13.10.2026 16:03:38 [🚗 CAM_OUT]  Lietotājs: sinavskis    | AI Kamera: Auto МК5240 pameta vietu Nr. 7          | Summa:    0.00 EUR
+13.10.2026 16:06:34 [💸 CAM_IN]   Lietotājs: system       | AI Kamera: Auto OA222 ienema vietu Nr. 10          | Summa:    0.00 EUR

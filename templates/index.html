@@ -29,7 +29,7 @@
             margin: 0 auto;
         }
 
-        /* Премиальная шапка в стиле Flat-дизайна */
+        /* Premium klases galvene Flat dizaina stilā / Премиальная шапка в стиле Flat-дизайна */
         .header {
             display: flex;
             justify-content: space-between;
@@ -59,13 +59,13 @@
         .btn:hover { opacity: 0.9; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-success { background: var(--success); color: white; }
-/* Стили для адаптивного всплывающего модального окна */
+/* Stili adaptīvam uznirstošajam (modālajam) logam / Стили для адаптивного всплывающего модального окна */
         .modal-overlay {
             display: none;
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.4); /* Мягкое размытие заднего фона */
+            background: rgba(15, 23, 42, 0.4); /* Maigs fona aizmiglojums (blur efekts) / Мягкое размытие заднего фона */
             backdrop-filter: blur(4px);
             z-index: 9999;
             align-items: center;
@@ -84,7 +84,7 @@
         @keyframes modalFadeIn {
             from { opacity: 0; transform: scale(0.95) translateY(-10px); }
             to { opacity: 1; transform: scale(1) translateY(0); }
-        }        /* Динамические плашки уведомлений для пользователя */
+        }        /* Dinamiskas paziņojumu joslas lietotājam / Динамические плашки уведомлений для пользователя */
         .alert {
             padding: 14px 20px;
             border-radius: 8px;
@@ -117,7 +117,7 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Интерактивная графическая карта парковки */
+        /* Interaktīva grafiskā autostāvvietas karte / Интерактивная графическая карта парковки */
         .parking-section {
             background: var(--card-bg); border-radius: 12px; padding: 25px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 20px;
@@ -132,22 +132,22 @@
 
         .spots-grid {
             display: grid;
-            grid-template-columns: repeat(5, 1fr); /* Жестко 5 колонок в ряд, как на фото */
+            grid-template-columns: repeat(5, 1fr); /* Stingri 5 kolonnas rindā, kā attēlā / Жестко 5 колонок в ряд, как на фото */
             gap: 10px;
-            max-width: 900px; /* Ограничиваем общую ширину сетки */
-            margin: 0 auto 20px auto; /* Центрируем всю схему по центру экрана */
+            max-width: 900px; /* Ierobežojam kopējo režģa platumu / Ограничиваем общую ширину сетки */
+            margin: 0 auto 20px auto; /* Centrējam visu shēmu ekrāna vidū / Центрируем всю схему по центру экрана */
         }
 
         .spot-card {
             border: 1px solid var(--border);
-            padding: 8px 5px; /* Компактные внутренние отступы */
+            padding: 8px 5px; /*Kompaktas iekšējās atkāpes / Компактные внутренние отступы */
             border-radius: 8px;
             text-align: center;
             cursor: pointer;
             transition: all 0.2s ease;
             position: relative;
             background: #fafafa;
-            min-height: 70px; /* Фиксированная небольшая высота */
+            min-height: 70px; /* Fiksēts neliels augstums / Фиксированная небольшая высота */
             box-sizing: border-box;
         }
         .spot-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
@@ -156,7 +156,7 @@
         .spot-free { border-top: 4px solid var(--success); background: #f0fdf4; }
         .spot-busy { border-top: 4px solid var(--danger); background: #fef2f2; }
 
-        /* Нижние панели действий (Grid Layout) */
+        /* Apakšējie darbību paneļi (Grid Layout) / Нижние панели действий (Grid Layout) */
         .card {
             background: var(--card-bg); border-radius: 12px; padding: 20px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 20px;
@@ -165,15 +165,15 @@
 
           .controls-grid {
             display: flex;
-            flex-direction: row;       /* Строго в одну линию */
+            flex-direction: row;       /* Stingri vienā līnijā / Строго в одну линию */
             gap: 15px;
-            align-items: flex-end;     /* Выравниваем поля и кнопку по нижней линии */
-            justify-content: center;   /* <-- ИСПРАВЛЕНО: Двигает всю строку ровно по центру экрана */
+            align-items: flex-end;     /* Nolīmeņojam ievades laukus un pogu pēc apakšējās līnijas / Выравниваем поля и кнопку по нижней линии */
+            justify-content: center;   /* <-- LABOTS: Pārvieto visu rindu precīzi ekrāna vidū / ИСПРАВЛЕНО: Двигает всю строку ровно по центру экрана */
         }
 
-        /* Делаем сами поля аккуратными и узкими */
+        /* Padarām pašu ievades laukus glītus un šaurus / Делаем сами поля аккуратными и узкими */
         .controls-grid .form-group {
-            width: 180px;              /* Каждое поле будет шириной всего 180 пикселей */
+            width: 180px;              /* Katra lauka platums būs tikai 180 pikseļi / Каждое поле будет шириной всего 180 пикселей */
         }
         .topup-grid {
             display: grid; grid-template-columns: 1fr auto; gap: 15px; align-items: end;
@@ -195,8 +195,8 @@
 <body>
 
 <div class="container">
-    <!-- Верхняя панель (Фирменный стиль ParkNow) -->
-     <!-- Верхняя панель (Фирменный стиль ParkNow) с кнопкой пополнения -->
+    <!-- Augšējais panelis (ParkNow zīmola stils) / Верхняя панель (Фирменный стиль ParkNow) -->
+     <!-- Augšējais panelis (ParkNow zīmola stils) ar papildināšanas pogu / Верхняя панель (Фирменный стиль ParkNow) с кнопкой пополнения -->
    <div class="header">
         <div>
             <div class="logo-block">
@@ -214,7 +214,7 @@
                 Balanss: {{ "%.2f"|format(current_balance) }} €
             </div>
 
-            <!-- Новая кнопка пополнения кошелька -->
+            <!-- Jauna maka papildināšanas poga Новая кнопка пополнения кошелька -->
             <button type="button" class="btn btn-success" onclick="openTopupModal()">+ Papildināt</button>
 
             {% if is_admin %}
@@ -224,54 +224,60 @@
         </div>
     </div>
 
-    <!-- ИНТЕЛЛЕКТУАЛЬНЫЙ БЛОК ОПОВЕЩЕНИЙ И ОШИБОК ДЛЯ ПОЛЬЗОВАТЕЛЯ -->
-    {% if msg %}
-        {# Если в сообщении есть слово Kluda или Nepietiek — красим в красный цвет ошибки #}
-        {% if "Kluda" in msg or "Nepietiek" in msg or "Kļūda" in msg %}
-            <div class="alert alert-error" id="system-alert">
-                <span>🛑</span> <strong>Sistēmas kļūda:</strong> {{ msg }}
-            </div>
-        {# Если бронь успешна или баланс пополнен — красим в зеленый цвет #}
-        {% else %}
-            <div class="alert alert-success" id="system-alert">
-                <span>✅</span> <strong>Paziņojums:</strong> {{ msg }}
-            </div>
+    <!-- INTELEKTUĀLAIS PAZIŅOJUMU UN KĻŪDU BLOKS LIETOTĀJAM / ИНТЕЛЛЕКТУАЛЬНЫЙ БЛОК ОПОВЕЩЕНИЙ И ОШИБОК ДЛЯ ПОЛЬЗОВАТЕЛЯ -->
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                {# Ja paziņojumā ir vārds "Kluda", "Nepietiek" vai "Kļūda" — krāsojam kļūdu sarkanā krāsā #}
+                {# Если в сообщении есть слово Kluda, Nepietiek или Kļūda — красим в красный цвет ошибки #}
+                {% if "Kluda" in message or "Nepietiek" in message or "Kļūda" in message %}
+                    <div class="alert alert-error" id="system-alert-{{ loop.index }}">
+                        <span>🛑</span> <strong>Sistēmas kļūda:</strong> {{ message }}
+                    </div>
+                {# Ja rezervācija ir veiksmīga vai balanss ir papildināts — krāsojam zaļā krāsā #}
+                {# Если бронь успешна или баланс пополнен — красим в зеленый цвет #}
+                {% else %}
+                    <div class="alert alert-success" id="system-alert-{{ loop.index }}">
+                        <span>✅</span> <strong>Paziņojums:</strong> {{ message }}
+                    </div>
+                {% endif %}
+
+                <!-- Skripts automātiskai paziņojuma pakāpeniskai izgaišanai pēc 5 sekundēm / Скрипт автоматического плавного растворения уведомления через 5 секунд -->
+                <script>
+                    setTimeout(() => {
+                        const alertBlock = document.getElementById("system-alert-{{ loop.index }}");
+                        if (alertBlock) {
+                            alertBlock.style.transition = "opacity 0.5s ease";
+                            alertBlock.style.opacity = "0";
+                            setTimeout(() => alertBlock.style.display = 'none', 500);
+                        }
+                    }, 5000);
+                </script>
+            {% endfor %}
         {% endif %}
+    {% endwith %}
 
-        <!-- Скрипт автоматического плавного растворения уведомления через 5 секунд -->
-        <script>
-            setTimeout(() => {
-                const alertBlock = document.getElementById('system-alert');
-                if (alertBlock) {
-                    alertBlock.style.transition = "opacity 0.5s ease";
-                    alertBlock.style.opacity = "0";
-                    setTimeout(() => alertBlock.style.display = 'none', 500);
-                }
-            }, 5000);
-        </script>
-    {% endif %}
-
-    <!-- Помощник при полной загрузке парковки -->
+    <!-- Palīgs pilnas autostāvvietas noslogojuma gadījumā / Помощник при полной загрузке парковки -->
     {% if next_free_info %}
         <div class="alert alert-info">
             <span>ℹ️</span> {{ next_free_info }}
         </div>
     {% endif %}
 
-    <!-- Интерактивная карта парковочных зон (25 мест) -->
-    <!-- Карта парковочной зоны (25 мест) с исправленной структурой сеток -->
+    <!-- Interaktīvā stāvvietu zonu karte (25 vietas) / Интерактивная карта парковочных зон (25 мест) -->
+    <!-- Stāvvietu zonas karte (25 vietas) ar izlabotu režģu struktūru / Карта парковочной зоны (25 мест) с исправленной структурой сеток -->
     <div class="parking-section">
 
-  <!-- 1. ЗОНА ДЛЯ ИНВАЛИДОВ -->
+  <!-- 1. INVALĪDU ZONA / ЗОНА ДЛЯ ИНВАЛИДОВ -->
 <div class="spots-grid">
     {% for i in range(1, 6) %}
         {% set i_str = i|string %}
         {% set spot = spots[i_str] %}
         {% set status = spot.get('status', true) if spot is mapping else spot %}
 
-        {# Безопасно извлекаем госномер для проверок #}
+        {# Droša valsts reģistrācijas numura iegūšana pārbaudēm / Безопасно извлекаем госномер для проверок #}
         {% set spot_plate = status.plate if status is mapping else status %}
-        {# Переводим логический статус в простую строку для JavaScript, чтобы не ломать onclick #}
+        {# Loģiskā statusa konvertēšana par vienkāršu virkni (string) priekš JavaScript, lai nesabojātu onclick funkciju / Переводим логический статус в простую строку для JavaScript, чтобы не ломать onclick #}
         {% set js_status = 'True' if (status is sameas true or status == true or status == "True") else spot_plate %}
 
         <div class="spot-card {% if status is sameas true or status == true or status == 'True' %}spot-free{% else %}spot-busy{% endif %}" data-spot="{{ i }}" onclick="selectSpot(this, '{{ js_status }}')">
@@ -281,7 +287,7 @@
                 {% if status is sameas true or status == true or status == 'True' %}
                     <span style="color: var(--success); font-weight: 700;">Brīvs</span>
                 {% else %}
-                    {# Проверяем: принадлежит ли этот номер текущему вошедшему водителю #}
+                    {# Pārbaude: vai šis numurs pieder pašlaik autorizētajam vadītājam / Проверяем: принадлежит ли этот номер текущему вошедшему водителю #}
                     {% if spot_plate == current_plate %}
                         <span style="background: rgba(59, 130, 246, 0.08); padding: 4px 6px; border-radius: 4px; display: inline-block; border: 1px solid rgba(59, 130, 246, 0.15); width: 85%;">
                             <strong style="color: #3b82f6; font-size: 12px;">{{ spot_plate }}</strong>
@@ -299,14 +305,14 @@
     {% endfor %}
 </div>
 
-<!-- 2. ОБЫЧНАЯ ЗОНА -->
+<!-- 2. PARASTĀ ZONA / ОБЫЧНАЯ ЗОНА -->
 <div class="spots-grid">
     {% for i in range(6, 21) %}
         {% set i_str = i|string %}
         {% set spot = spots[i_str] %}
         {% set status = spot.get('status', true) if spot is mapping else spot %}
 
-        {# Безопасно извлекаем госномер для проверок #}
+        {# Droša valsts reģistrācijas numura izgūšana pārbaudēm / Безопасно извлекаем госномер для проверок #}
         {% set spot_plate = status.plate if status is mapping else status %}
         {# Переводим статус в строку для JS, чтобы не ломать структуру HTML-тега сложным словарем #}
         {% set js_status = 'True' if (status is sameas true or status == true or status == "True") else spot_plate %}
@@ -317,7 +323,7 @@
                 {% if status is sameas true or status == true or status == 'True' %}
                     <span style="color: var(--success); font-weight: 700;">Brīvs</span>
                 {% else %}
-                    {# Проверяем: принадлежит ли этот номер текущему вошедшему водителю #}
+                    {# Pārbaude: vai šis numurs pieder pašlaik autorizētajam vadītājam / Проверяем: принадлежит ли этот номер текущему вошедшему водителю #}
                     {% if spot_plate == current_plate %}
                         <span style="background: rgba(59, 130, 246, 0.08); padding: 4px 6px; border-radius: 4px; display: inline-block; border: 1px solid rgba(59, 130, 246, 0.15); width: 85%;">
                             <strong style="color: #3b82f6; font-size: 12px;">{{ spot_plate }}</strong>
@@ -335,16 +341,16 @@
     {% endfor %}
 </div>
 
-<!-- 3. ЗОНА ЭЛЕКТРОМОБИЛЕЙ -->
+<!-- 3. ELEKTROAUTOMOBIĻU ZONA / ЗОНА ЭЛЕКТРОМОБИЛЕЙ -->
 <div class="spots-grid">
     {% for i in range(21, 26) %}
         {% set i_str = i|string %}
         {% set spot = spots[i_str] %}
         {% set status = spot.get('status', true) if spot is mapping else spot %}
 
-        {# Безопасно извлекаем госномер для проверок #}
+        {# Droša valsts reģistrācijas numura izgūšana pārbaudēm / Безопасно извлекаем госномер для проверок #}
         {% set spot_plate = status.plate if status is mapping else status %}
-        {# Переводим статус в строку для JS, чтобы не ломать структуру HTML-тега сложным словарем #}
+        {# Statusa konvertēšana par virkni (string) priekš JS, lai nesabojātu HTML taga struktūru ar sarežģītu vārdnīcu / Переводим статус в строку для JS, чтобы не ломать структуру HTML-тега сложным словарем #}
         {% set js_status = 'True' if (status is sameas true or status == true or status == "True") else spot_plate %}
 
         <div class="spot-card {% if status is sameas true or status == true or status == 'True' %}spot-free{% else %}spot-busy{% endif %}" data-spot="{{ i }}" onclick="selectSpot(this, '{{ js_status }}')">
@@ -354,7 +360,7 @@
                 {% if status is sameas true or status == true or status == 'True' %}
                     <span style="color: var(--success); font-weight: 700;">Brīvs</span>
                 {% else %}
-                    {# Проверяем: принадлежит ли этот номер текущему вошедшему водителю #}
+                    {# Pārbaude: vai šis numurs pieder pašlaik autorizētajam vadītājam / Проверяем: принадлежит ли этот номер текущему вошедшему водителю #}
                     {% if spot_plate == current_plate %}
                         <span style="background: rgba(59, 130, 246, 0.08); padding: 4px 6px; border-radius: 4px; display: inline-block; border: 1px solid rgba(59, 130, 246, 0.15); width: 85%;">
                             <strong style="color: #3b82f6; font-size: 12px;">{{ spot_plate }}</strong>
@@ -371,7 +377,7 @@
         </div>
     {% endfor %}
 </div>
-    <!-- Форма бронирования и освобождения мест (Оставляем её по центру) -->
+    <!-- Rezervēšanas un vietu atbrīvošanas forma (Atstājam to centrā) / Форма бронирования и освобождения мест (Оставляем её по центру) -->
     <div class="card">
         <div class="card-title" style="text-align: center;">Stāvvietas rezervācija</div>
         <form action="/" method="POST" class="controls-grid">
@@ -398,10 +404,10 @@
         </form>
     </div>
 
-</div> <!-- Закрываем главный .container -->
+</div> <!--Noslēdzam galveno .container /  Закрываем главный .container -->
 
 
-<!-- ВСПЛЫВАЮЩЕЕ МОДАЛЬНОЕ ОКНО (Оно активируется кнопкой из шапки) -->
+<!-- UZNIRSTOŠAIS (MODĀLAIS) LOGS (Tas tiek aktivizēts ar pogu no galvenes) / ВСПЛЫВАЮЩЕЕ МОДАЛЬНОЕ ОКНО (Оно активируется кнопкой из шапки) -->
 <div id="topup-modal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center;">
     <div class="card" style="width: 100%; max-width: 400px; margin: 20px; background: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border-top: 4px solid var(--success);">
 
@@ -424,9 +430,9 @@
 </div>
 
 
-<!-- НАДЕЖНЫЕ СКРИПТЫ УПРАВЛЕНИЯ ИНТЕРФЕЙСОМ -->
+<!-- UZTICAMI SASKARNES VADĪBAS SKRIPTI / НАДЕЖНЫЕ СКРИПТЫ УПРАВЛЕНИЯ ИНТЕРФЕЙСОМ -->
 <script>
-    // 1. Выбор парковочного места по клику мышкой
+    // 1.  Stāvvietas izvēle ar peles klikšķi / Выбор парковочного места по клику мышкой
     function selectSpot(element, status) {
         document.querySelectorAll('.spot-card').forEach(card => card.classList.remove('selected'));
 
@@ -444,7 +450,7 @@
         toggleDuration();
     }
 
-    // 2. Блокировка выбора часов при выборе действия "Atbrīvot"
+    // 2. Stundu izvēles bloķēšana, ja izvēlēta darbība "Atbrīvot" / Блокировка выбора часов при выборе действия "Atbrīvot"
     function toggleDuration() {
         const action = document.getElementById('action').value;
         const durationGroup = document.getElementById('duration-group');
@@ -459,7 +465,7 @@
         }
     }
 
-    // 3. Открытие модального окна кошелька
+    // 3. Maka modālā loga atvēršana / Открытие модального окна кошелька
     function openTopupModal() {
         const modal = document.getElementById('topup-modal');
         if (modal) {
@@ -467,7 +473,7 @@
         }
     }
 
-    // 4. Закрытие модального окна кошелька
+    // 4. Maka modālā loga aizvēršana / Закрытие модального окна кошелька
     function closeTopupModal() {
         const modal = document.getElementById('topup-modal');
         if (modal) {
@@ -475,7 +481,7 @@
         }
     }
 
-    // 5. Автоматическое закрытие окна, если кликнуть на серую область вокруг него
+    // 5. Automātiska loga aizvēršana, ja tiek noklikšķināts uz pelēkās zonas ap to / Автоматическое закрытие окна, если кликнуть на серую область вокруг него
     window.onclick = function(event) {
         const modal = document.getElementById('topup-modal');
         if (event.target == modal) {

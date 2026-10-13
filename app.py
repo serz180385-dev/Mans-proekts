@@ -6,7 +6,10 @@ app = Flask(__name__)
 app.secret_key = "super_secret_parking_key"
 
 def log_transaction(tag, user, details, amount_str):
-    """Глобальная функция красивого логирования в transactions.txt"""
+    """
+    Globāla skaistas žurnālēšanas funkcija failā transactions.txt
+    Глобальная функция красивого логирования в transactions.txt
+    """
     try:
         log_time = datetime.now().strftime('%d.%m.%Y %H:%M:%S')
         with open("transactions.txt", "a", encoding="utf-8") as log_file:
@@ -17,6 +20,7 @@ def log_transaction(tag, user, details, amount_str):
     except Exception:
         pass
 
+# ATSLODZES MODUĻU REĢISTRĀCIJA (Importējam pēc žurnāla deklarēšanas)
 # РЕГИСТРАЦИЯ МОДУЛЕЙ-РАЗГРУЗЧИКОВ (Импортируем после объявления лога)
 from routes_driver import driver_bp
 from routes_admin import admin_bp
@@ -28,7 +32,10 @@ app.register_blueprint(emulator_bp)
 
 @app.route('/')
 def home():
-    """Главная страница интерактивной карты парковки для авторизованных водителей"""
+    """
+    Interaktīvās stāvvietu kartes galvenā lapa autorizētiem vadītājiem
+    Главная страница интерактивной карты парковки для авторизованных водителей
+    """
     if "username" not in session:
         return redirect('/login')
 
@@ -45,6 +52,7 @@ def home():
     current_balance = user_data.get("balance", 0.0)
     is_admin = user_data.get("is_admin", False)
 
+    # Aprēķinām viedo ieteikumu par nākamo brīvo vietu
     # Высчитываем интеллектуальную подсказку о следующем свободном месте
     earliest_spot = None
     earliest_time = None
@@ -71,9 +79,11 @@ def home():
             f"plkst. {earliest_time.strftime('%H:%M')}."
         )
 
+    # Izņemts msg=request.args.get('msg') jaunās flash sistēmas atbalstam
+    # Удален msg=request.args.get('msg') для поддержки новой системы flash
     return render_template('index.html', spots=spots, current_plate=current_plate,
-                           current_balance=current_balance, msg=request.args.get('msg'),
-                           next_free_info=next_free_info, is_admin=is_admin)
+                           current_balance=current_balance, next_free_info=next_free_info,
+                           is_admin=is_admin)
 
 if __name__ == '__main__':
     app.run(debug=True)

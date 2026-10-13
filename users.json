@@ -1,8 +1,8 @@
 {
     "serz": {
         "password": "123456",
-        "plate": "VR2010",
-        "balance": 8.0,
+        "plate": "VR2011",
+        "balance": 50.0,
         "is_ev": false,
         "phone": "Nav norādīts",
         "is_disabled": false,
@@ -12,7 +12,7 @@
     "sinavskis": {
         "password": "123456",
         "plate": "МК5240",
-        "balance": 8.0,
+        "balance": 6.0,
         "is_ev": false,
         "phone": "Nav norādīts",
         "is_disabled": false,
@@ -22,7 +22,7 @@
     "zanna": {
         "password": "53128",
         "plate": "DZ6196",
-        "balance": 17.0,
+        "balance": 15.0,
         "is_ev": false,
         "phone": "Nav norādīts",
         "is_disabled": false,
@@ -42,7 +42,7 @@
     "vladimirs": {
         "password": "987654",
         "plate": "OK222",
-        "balance": 4.0,
+        "balance": 46.0,
         "is_ev": false,
         "is_disabled": false,
         "disabled_card": null,
@@ -64,7 +64,7 @@
         "plate": "VR2010",
         "phone": "Nav norādīts",
         "email": "admin@parknow.lv",
-        "balance": 22.0,
+        "balance": 14.0,
         "is_ev": false,
         "is_disabled": false,
         "disabled_card": null,
