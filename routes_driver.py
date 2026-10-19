@@ -240,7 +240,8 @@ def handle_parking():
         flash(f'Balanss veiksmīgi papildināts par {amount:.2f} EUR!')
         return redirect('/')
 
-    @driver_bp.route('/logout')
+    @app.route('/logout')
     def logout():
+        """Lietotāja izrakstīšanās un sesijas dzēšana"""
         session.clear()
         return redirect('/login')

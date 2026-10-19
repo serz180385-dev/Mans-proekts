@@ -1,5 +1,6 @@
+import re
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, session
+from flask import Flask, render_template, request, redirect, session, url_for, flash
 from database import load_data, load_users
 
 app = Flask(__name__)
@@ -84,6 +85,17 @@ def home():
     return render_template('index.html', spots=spots, current_plate=current_plate,
                            current_balance=current_balance, next_free_info=next_free_info,
                            is_admin=is_admin)
+
+@app.route('/logout')
+def logout():
+    """
+    Lietotāja izrakstīšanās un sesijas dzēšana tīmekļa saskarnē
+    Выход пользователя из системы и очистка сессии в веб-интерфейсе
+    """
+    # Dzēšam visus datus no lietotāja sesijas / Полностью очищаем куки сессии водителя/админа
+    session.clear()
+    # Pārvirzām uz autorizācijas lapu / Перенаправляем на страницу входа
+    return redirect('/login')
 
 if __name__ == '__main__':
     app.run(debug=True)

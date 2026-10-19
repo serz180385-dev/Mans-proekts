@@ -35,3 +35,7 @@
 13.10.2026 15:54:31 [💸 CAM_IN]   Lietotājs: sinavskis    | AI Kamera: Auto МК5240 ienema vietu Nr. 7          | Summa:   -2.00 EUR
 13.10.2026 16:03:38 [🚗 CAM_OUT]  Lietotājs: sinavskis    | AI Kamera: Auto МК5240 pameta vietu Nr. 7          | Summa:    0.00 EUR
 13.10.2026 16:06:34 [💸 CAM_IN]   Lietotājs: system       | AI Kamera: Auto OA222 ienema vietu Nr. 10          | Summa:    0.00 EUR
+19.10.2026 15:51:31 [💸 PAYMENT]  Lietotājs: serz         | Rezervēta vieta Nr. 14 uz 1 st.                    | Summa:   -2.00 EUR
+19.10.2026 15:53:28 [💸 CAM_IN]   Lietotājs: serz         | AI Kamera: Auto VR2011 ienema vietu Nr. 14         | Summa:   -2.00 EUR
+19.10.2026 15:54:56 [💸 CAM_IN]   Lietotājs: system       | AI Kamera: Auto FX9999 ienema vietu Nr. 13         | Summa:    0.00 EUR
+19.10.2026 15:55:43 [⚠️ PENALTY] Lietotājs: system       | AI Kamera: Auto FX9999 aizbrauca bez apmaksas! Nosutits CSDD | Summa:   30.00 EUR
