@@ -37,10 +37,6 @@ def load_data():
         except json.JSONDecodeError:
             parking_spots = DEFAULT_SPOTS
 
-    # =========================================================================
-    # INTELIĢENTĀ AUTOMĀTISKĀ PAGARINĀŠANA UN STUNDAS NORAKSTĪŠANA NO MAKA
-    # ИНТЕЛЛЕКТУАЛЬНОЕ АВТОПРОДЛЕНИЕ И ПОЧАСОВОЕ СПИСАНИЕ С КОШЕЛЬКА
-    # =========================================================================
     now = datetime.now()
     updated_spots = False
 
@@ -70,15 +66,15 @@ def load_data():
                     if now > ends_at_time:
                         plate = status_dict.get("plate", "")
 
-                        # KRITISKS CIKLA KĻŪDAS LABOJUMS:
                         # Aprēķinām precīzu laika starpību un nosakām kavēto stundu skaitu
-                        # КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ БАГА ЗАЦИКЛИВАНИЯ:
                         # Считаем точную разницу во времени и определяем количество просроченных часов
                         time_delta = now - ends_at_time
                         hours_overdue = int(time_delta.total_seconds() // 3600) + 1
+                        if hours_overdue <= 0:
+                            hours_overdue = 1
 
                         # Meklējam automašīnas īpašnieku pēc valsts numura iekš users.json
-                        # Ищем владельца машины по госномер в users.json
+                        # Ищем владельца машины по госномуеру в users.json
                         owner_username = None
                         for uname, udata in users.items():
                             if udata.get("plate", "").replace("-", "").strip().upper() == plate.replace("-",
@@ -87,36 +83,29 @@ def load_data():
                                 break
 
                         price_per_hour = 2.0  # Sistēmas bāzes tarifs par 1 papildu stundu
-                                              # Базовый тариф системы за 1 дополнительный час
+                        # Базовый тариф системы за 1 дополнительный час
                         total_overdue_cost = hours_overdue * price_per_hour
 
                         if owner_username:
-                            # Iegūstam autovadītāja pašreizējo bilanci
-                            # Извлекаем текущий баланс водителя
+                            # -------------------------------------------------
+                            # 1. SCENĀRIJS: Reģistrēts klients (bīdām laiku un norakstām naudu)
+                            # 1. СЦЕНАРИЙ: Зарегистрированный клиент (сдвигаем время и списываем деньги)
+                            # -------------------------------------------------
                             current_balance = users[owner_username].get("balance", 10.0)
-
-                            # Norakstām naudu par visām kavētajām stundām uzreiz kā vienu summu
-                            # Списываем деньги за все просроченные часы сразу одной суммой
                             users[owner_username]["balance"] = round(current_balance - total_overdue_cost, 2)
                             users_updated = True
 
-                            # Pabīdām rezervācijas beigu laiku stingri uz priekšu par aprēķināto stundu skaitu
-                            # Сдвигаем время окончания брони строго на вычисленное количество часов вперед
                             ends_at_time = ends_at_time + timedelta(hours=hours_overdue)
                             parking_spots[spot_id]["status"]["ends_at"] = ends_at_time.strftime("%d.%m.%Y %H:%M")
 
-                            # Palielinām apmaksāto stundu skaitītāju stāvvietas sesijā par kavējuma stundu skaitu
-                            # Увеличиваем счетчик оплаченных часов в сессии парковки на количество часов просрочки
                             if "duration_hours" in parking_spots[spot_id]["status"]:
                                 parking_spots[spot_id]["status"]["duration_hours"] += hours_overdue
+                            else:
+                                parking_spots[spot_id]["status"]["duration_hours"] = hours_overdue
 
-                            # 🆕 PIEVIENOTS: Automātiskās pagarināšanas marķieris attēlošanai klientam
-                            # 🆕 ДОБАВЛЕНО: Маркер автоматического продления для отображения клиенту
                             parking_spots[spot_id]["status"]["is_extended"] = True
                             updated_spots = True
 
-                            # Ierakstām vienu skaistu kopsavilkuma rindu failā transactions.txt bezgalīgu ciklu vietā
-                            # Пишем одну красивую итоговую строчку в transactions.txt вместо бесконечных циклов
                             try:
                                 log_time = datetime.now().strftime('%d.%m.%Y %H:%M:%S')
                                 with open("transactions.txt", "a", encoding="utf-8") as log_file:
@@ -127,12 +116,23 @@ def load_data():
                             except Exception:
                                 pass
                         else:
-                            # Ja tas ir nereģistrēts viesis no kameras, vienkārši pabīdām sesijas laiku
-                            # Если это незарегистрированный гость с камеры, просто сдвигаем время сессии
+                            # -------------------------------------------------
+                            # 2. SCENĀRIJS: Nereģistrēts viesis (pārbīdām laiku droši uz priekšu)
+                            # 2. СЦЕНАРИЙ: Незарегистрированный гость (сдвигаем время надежно вперед)
+                            # -------------------------------------------------
                             ends_at_time = ends_at_time + timedelta(hours=hours_overdue)
+
+                            # Ja jaunais laiks joprojām atpaliek no reālā, sinhronizējam to ar šo brīdi
+                            # Если новое время всё ещё отстает от реального, синхронизируем с текущим моментом
+                            if ends_at_time <= now:
+                                ends_at_time = now + timedelta(hours=1)
+
                             parking_spots[spot_id]["status"]["ends_at"] = ends_at_time.strftime("%d.%m.%Y %H:%M")
+
                             if "duration_hours" in parking_spots[spot_id]["status"]:
                                 parking_spots[spot_id]["status"]["duration_hours"] += hours_overdue
+                            else:
+                                parking_spots[spot_id]["status"]["duration_hours"] = hours_overdue
 
                             parking_spots[spot_id]["status"]["is_extended"] = True
                             updated_spots = True
@@ -140,22 +140,35 @@ def load_data():
                 except ValueError:
                     pass
 
-        # Sinhronizējam un pārrakstām JSON failus diskā, ja ir izmaiņas
-        # Синхронизируем и перезаписываем JSON-файлы на диск при наличии изменений
-        if users_updated and users:
+    # =========================================================================
+    # FAILU SAGLABĀŠANA DISKĀ (ĀRPUS CIKLA FOR - ATKĀPE 4 ATSTARPES)
+    # СОХРАНЕНИЕ ФАЙЛОВ НА ДИСК (ВНЕ ЦИКЛА FOR - ОТСТУП 4 ПРОБЕЛА)
+    # =========================================================================
+    if users_updated and users:
+        try:
             with open(USERS_FILE, "w", encoding="utf-8") as f:
                 json.dump(users, f, ensure_ascii=False, indent=4)
+        except Exception:
+            pass
 
-        if updated_spots:
+    if updated_spots:
+        try:
             with open(DATA_FILE, "w", encoding="utf-8") as f:
                 json.dump(parking_spots, f, ensure_ascii=False, indent=4)
+        except Exception:
+            pass
 
-        return parking_spots
+    return parking_spots
+
 
 def save_data(data):
-        """Datu saglabāšana JSON failā"""
+    """Datu saglabāšana JSON failā"""
+    # Сохранение данных в JSON-файл
+    try:
         with open(DATA_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
+    except Exception as e:
+        print(f"Kļūda saglabājot datus: {e}")
 
     # =========================================================================
     # DARBS AR LIETOTĀJIEM UN TO STATUSIEM

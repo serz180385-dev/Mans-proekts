@@ -245,3 +245,55 @@ TC-05	SAST-аудит безопасности кода	Провести авт�
 Если хотите, я могу помочь вам сделать последний шаг:
 • Написать точный текст вашего вступительного слова для презентации (скрипт речи на 2-3 минуты), чтобы сразу завоевать внимание комиссии.
 • Набросать раздел «Заключение» (Secinājumi) для текстового документа.
+
+13,10,2026
+
+
+1. Vienreizējo paziņojumu sistēmas ieviešana (Flask flash)
+
+
+Внедрение системы одноразовых уведомлений (Flask flash)
+
+• Pāreja uz drošu sesijas mehānismu: Pilnībā atteicāmies no vecā un neērtā ziņojumu nodošanas veida caur pārlūkprogrammas adreses joslu (?msg=).
+	• Переход на безопасный механизм сессий: Полностью отказались от старого и неудобного способа передачи сообщений через адресную строку браузера (?msg=).
+• Atjaunināšanas problēmas novēršana: Tagad, kad autovadītājs vai administrators atjaunina lapu (F5), uznirstošie paziņojumi vairs neatkārtojas un nedublējas.
+	• Устранение проблемы с обновлением: Теперь, когда водитель или администратор обновляют страницу (F5), всплывающие уведомления больше не повторяются и не дублируются.
+
+2. Datu bāzes moduļa (database.py) arhitektūras labojumi
+
+
+Исправление архитектуры модуля базы данных (database.py)
+
+• Cikliskā importa kļūdu novēršana: Atbrīvojām failu no savstarpējām atkarībām, kas neļāva Flask lietotnei palaisties (ImportError: cannot import name 'load_users').
+	• Устранение ошибок циклического импорта: Освободили файл от перекрестных зависимостей, которые мешали запуску Flask (ImportError: cannot import name 'load_users').
+• Kodu struktūras un atkāpju sakārtošana: Iznesām funkcijas load_users() un save_users() globālajā līmenī, lai tās būtu pieejamas visiem blueprintiem.
+	• Настройка структуры кода и отступов: Вынесли функции load_users() un save_users() на глобальный уровень, чтобы они были доступны всем блупринтам.
+
+3. Koda sinhronizācija un sintakses kļūdu labošana maršrutos
+
+
+Синхронизация кода и исправление синтаксических ошибок в роутах
+
+• Emulatora un administratora moduļu salabošana: Novērsām IndentationError kļūdas failos routes_driver.py un routes_emulator.py, kas radās nepareizu atkāpju (atstarpju) dēļ.
+	• Починка модулей эмулятора и админки: Исправили ошибки IndentationError в файлах routes_driver.py и routes_emulator.py, которые возникали из-за неверных отступов.
+• Kameras signālu apstrādes uzlabošana: AI kameras emulatorā integrējām pareizus, gramatiski precīzus paziņojumus latviešu valodā ar diakritiskajām zīmēm (ā, ī, ū, ž).
+	• Улучшение обработки сигналов камеры: В эмуляторе AI-камеры интегрировали правильные, грамматически точные уведомления на латышском языке с диакритическими знаками (ā, ī, ū, ž).
+
+4. HTML veidņu (index.html un admin.html) točnā pielāgošana
+
+
+Точечная адаптация HTML-шаблонов (index.html и admin.html)
+
+• Dizaina saglabāšana: Veicām tikai ķirurģiski precīzu koda nomaiņu, pateicoties kam jūsu unikālais vizuālais dizains (uz 600 rindām) palika pilnībā neskarts.
+	• Сохранение дизайна: Сделали только хирургически точную замену кода, благодаря чему ваш уникальный визуальный дизайн (на 600 строк) остался полностью нетронутым.
+• Sistēmas komentāru slēpšana: Novērsām problēmu, kad koda komentārs <!-- Sistēmas paziņojumi --> izvadījās virs statistikas kartītēm, aizvietojot to ar iekšējo Jinja2 sintaksi {# ... #}.
+	• Скрытие системных комментариев: Исправили проблему, когда комментарий кода <!-- Sistēmas paziņojumi --> выводился над карточками статистики, заменив его на внутренний синтаксис Jinja2 {# ... #}.
+
+5. Projekta stāvokļa fiksēšana Git (Komits)
+
+
+Фиксация состояния проекта в Git (Коммит)
+
+• Kopējais kontrolpunkts: Apvienojām visus labojumus vienā kopējā arhīva komitā, tādējādi izveidojot drošu projekta "atjaunošanas punktu". Tagad nepieciešamības gadījumā visu projektu var pilnībā atritināt līdz šim stabilajam stāvoklim.
+	• Общий чекпоинт: Объединили все исправления в один общий архивный коммит, создав безопасную «точку восстановления» проекта. Теперь при необходимости весь проект можно полностью откатить до этого стабильного состояния.
+
