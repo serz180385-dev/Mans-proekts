@@ -1,4 +1,15 @@
 {
+    "admin": {
+        "password": "laguna180385",
+        "plate": "VR2010",
+        "phone": "Nav norādīts",
+        "email": "admin@parknow.lv",
+        "balance": 12.0,
+        "is_ev": false,
+        "is_disabled": false,
+        "disabled_card": null,
+        "is_admin": true
+    },
     "serz": {
         "password": "123456",
         "plate": "VR2011",
@@ -11,7 +22,7 @@
     },
     "sinavskis": {
         "password": "123456",
-        "plate": "МК5240",
+        "plate": "MK5240",
         "balance": 6.0,
         "is_ev": false,
         "phone": "Nav norādīts",
@@ -31,8 +42,8 @@
     },
     "luka": {
         "password": "1234",
-        "plate": "FU-1751",
-        "balance": 10.0,
+        "plate": "FU1751",
+        "balance": 8.0,
         "is_ev": false,
         "is_disabled": false,
         "disabled_card": null,
@@ -58,17 +69,6 @@
         "disabled_card": "123456",
         "phone": "Nav norādīts",
         "is_admin": false
-    },
-    "admin": {
-        "password": "laguna180385",
-        "plate": "VR2010",
-        "phone": "Nav norādīts",
-        "email": "admin@parknow.lv",
-        "balance": 14.0,
-        "is_ev": false,
-        "is_disabled": false,
-        "disabled_card": null,
-        "is_admin": true
     },
     "viktors": {
         "password": "7777",

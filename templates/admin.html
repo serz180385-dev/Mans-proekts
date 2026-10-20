@@ -535,8 +535,46 @@
                         <div style="color: #808080; text-align: center; padding: 30px; font-family: sans-serif; background: #f8fafc;">Vēsture ir tukša. Nav reģistrētu transakciju.</div>
                     {% endif %}
                 </div>
+            </div> <!-- / Закрыли карточку логов ( transactions ) -->
+
+            <!-- ========================================================================= -->
+            <!-- NEREĢISTRĒTO TRANSPORTLĪDZEKĻU FIKSĀCIJA UN UZSKAITE (PIEVIENOTS) -->
+            <!-- СИСТЕМА ФИКСАЦИИ И УЧЕТА НЕЗАРЕГИСТРИРОВАННЫХ МАШИН (ГОСТЕЙ) -->
+            <!-- ========================================================================= -->
+            <div class="card" style="margin-top: 20px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <h3 style="color: #0f172a; font-size: 16px; font-weight: 700; margin-bottom: 5px; margin-top: 0;">📋 Nereģistrēto transportlīdzekļu uzskaite</h3>
+                <p style="font-size: 12px; color: #64748b; margin-bottom: 15px; margin-top: 0;">Aktīvās viesu sesijas, ko fiksējusi AI kamera (Kontrole pirms CSDD soda)</p>
+
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr style="border-bottom: 2px solid #edf2f7; text-align: left; color: #718096; font-size: 13px;">
+                                <th style="padding: 8px 4px;">Vieta</th>
+                                <th style="padding: 8px 4px;">Auto Numurs</th>
+                                <th style="padding: 8px 4px;">Iebraukšanas laiks</th>
+                                <th style="padding: 8px 4px; text-align: right;">Potenciālā maksa</th>
+                            </tr>
+                        </thead>
+                        <tbody style="font-size: 13px;">
+                            {% for guest in guest_cars %}
+                                <tr style="border-bottom: 1px solid #edf2f7;">
+                                    <td style="padding: 10px 4px;"><span class="badge" style="background: #f1f5f9; color: #0f172a; font-weight: 700; padding: 2px 6px; border-radius: 4px;">Nr. {{ guest.spot_id }}</span></td>
+                                    <td style="padding: 10px 4px;"><strong style="color: #c2410c;">{{ guest.plate }}</strong></td>
+                                    <td style="padding: 10px 4px; color: #4a5568;">{{ guest.booked_at }}</td>
+                                    <td style="padding: 10px 4px; text-align: right;"><span style="font-weight: 700; color: #b91c1c;">{{ guest.potential_fee }} EUR</span></td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="4" style="text-align: center; color: #94a3b8; padding: 20px 0; font-weight: 600;">Šobrīd stāvvietā nav nereģistrēto viesu auto.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </div> <!-- Slēdzam kreiso kolonu (.col-left) / Закрываем левую колонку строго на своём месте! -->
+            <!-- ========================================================================= -->
+
+        </div> <!-- Slēdzam kreiso kolonu (.col-left) / Закрываем левую公kę строго на своём месте! -->
 
         <!-- LABĀ KOLONNA: Balansa korekcija un Evakuatora izsaukšana / ПРАВАЯ КОЛОНКА: Корректировка баланса и Эвакуатор мест -->
         <div>

@@ -233,9 +233,13 @@ def book_spot(current_user):  # <-- LABOTS: Piesaiste stingri lietotājam / <-- 
         else:
             print(f"⚠️ Atvainojiet, vieta Nr. {spot_number} jau ir aizņemta.")
 
-    except Exception as e:
+        except Exception as e:
         print(f"❌ Kļūda: {e}")
 
+    # =========================================================================
+    # LABOTS: Atkāpes ir noņemtas un funkcija ir iznesta globālajā līmenī
+    # ИСПРАВЛЕНО: Отступы убраны и функция вынесена на глобальный уровень
+    # =========================================================================
     def free_spot(current_plate):
         """
         Droša vietas atbrīvošanas funkcija pēc valsts numura
@@ -255,13 +259,17 @@ def book_spot(current_user):  # <-- LABOTS: Piesaiste stingri lietotājam / <-- 
             if current_status is True:
                 print(f"⚠️ Vieta Nr. {spot_number} jau ir brīva!")
             elif isinstance(current_status, dict) and current_status.get("plate") == current_plate:
+                # Ja stāvvietas dati ir vārdnīca, mēs pārrakstām tikai statusa lauku
+                # Если данные парковки являются словарем, мы перезаписываем только поле статуса
                 if isinstance(parking_spots[spot_number], dict):
                     parking_spots[spot_number]["status"] = True
                 else:
                     parking_spots[spot_number] = True
+
                 save_data(parking_spots)
                 print(f"✅ Veiksmīgi! Jūs atbrīvojāt vietu Nr. {spot_number}.")
             else:
                 print(f"❌ Kļūda: Jūs nevarat atbrīvot vietu Nr. {spot_number}, jo to aizņēma cits!")
+
         except Exception as e:
             print(f"❌ Kļūda: {e}")

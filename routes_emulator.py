@@ -1,3 +1,5 @@
+import os
+import re
 from datetime import datetime, timedelta
 # Pievienojam flash funkciju Flask importa rindā augšā vienreizējiem paziņojumiem
 # Добавляем функцию flash в строку импорта Flask вверху файла для одноразовых уведомлений
@@ -84,26 +86,51 @@ def camera_emulator():
             flash(f'Kamera fiksēja izbraukšanu! Vieta Nr. {spot_id} ir brīva.')
             return redirect('/admin')
 
-    # --- 2. SCENĀRIJS: AUTOMAŠĪNA IEBRAUCA ---
-    # --- СЦЕНАРИЙ 2: МАШИНА ПРИЕХАЛА ---
+    # --- 2. SCENĀRIJS: AUTOMAŠĪNA IEBRAUCA (SALABOTS UN AIZSARGĀTS) ---
+    # --- СЦЕНАРИЙ 2: МАШИНА ПРИЕХАЛА (ИСПРАВЛЕНО И ЗАЩИЩЕНО) ---
     if action == "arrival":
-        if not isinstance(parking_spots[spot_id], dict):
-            parking_spots[spot_id] = {"type": "regular"}
+        # Pārbaudām pašreizējo vietas statusu pirms jauna auto novietošanas
+        # Проверяем текущий статус места перед размещением новой машины
+        current_status = parking_spots[spot_id].get("status", True) if isinstance(parking_spots[spot_id], dict) else parking_spots[spot_id]
+
+        # APARATŪRAS AIZSARDZĪBA: Ja vieta nav brīva, bloķējam iebraukšanu ar kļūdas paziņojumu
+        # АППАРАТНАЯ ЗАЩИТА: Если место не свободно, блокируем въезд с сообщением об ошибке
+        if current_status is not True and current_status != "True":
+            flash(f'Kļūda: Vieta Nr. {spot_id} jau ir aizņemta! Nevar novietot otru auto.')
+            return redirect('/admin')
+
+        # Saglabājam esošo vietas tipu, ja tāds jau ir definēts datubāzē
+        # Сохраняем существующий тип места, если он уже определен в базе данных
+        if isinstance(parking_spots.get(spot_id), dict):
+            spot_type = parking_spots[spot_id].get("type", "regular")
+        else:
+            spot_id_int = int(spot_id)
+            spot_type = "disabled" if spot_id_int <= 5 else ("ev" if spot_id_int > 20 else "regular")
 
         now = datetime.now()
         ends_at = now + timedelta(hours=1)
 
         owner_username = "system"
         collected_amount = "0.00"
+        user_disabled_card = None
 
+        # Meklējam automašīnas īpašnieku un viņa īpašos statusus
+        # Ищем владельца автомобиля и его специальные статусы
+        cam_plate = plate.replace("-", "").strip().upper()
         for uname, udata in users.items():
             db_plate = udata.get("plate", "").replace("-", "").strip().upper()
-            cam_plate = plate.replace("-", "").strip().upper()
 
             if db_plate == cam_plate:
                 owner_username = uname
                 current_balance = udata.get("balance", 0.0)
 
+                # Automātiski izgūstam invalīda apliecības numuru, ja tas eksistē
+                # Автоматически извлекаем номер удостоверения инвалида, если он существует
+                if udata.get("is_disabled", False):
+                    user_disabled_card = udata.get("disabled_card")
+
+                # Norakstām stundas tarifu, ja lietotājam ir pietiekami daudz līdzekļu
+                # Списываем часовой тариф, если у пользователя достаточно средств
                 if current_balance >= PRICE_PER_HOUR:
                     users[uname]["balance"] = round(current_balance - PRICE_PER_HOUR, 2)
                     save_users(users)
@@ -112,16 +139,22 @@ def camera_emulator():
                     collected_amount = "0.00"
                 break
 
-        parking_spots[spot_id]["status"] = {
-            "plate": plate,
-            "booked_at": now.strftime("%d.%m.%Y %H:%M"),
-            "duration_hours": 1,
-            "ends_at": ends_at.strftime("%d.%m.%Y %H:%M"),
-            "disabled_card": None
+        # Saglabājam datus, pilnībā saglabājot vietas struktūru un tipu
+        # Сохраняем данные, полностью сохраняя структуру и тип места
+        parking_spots[spot_id] = {
+            "type": spot_type,
+            "status": {
+                "plate": plate,
+                "booked_at": now.strftime("%d.%m.%Y %H:%M"),
+                "duration_hours": 1,
+                "ends_at": ends_at.strftime("%d.%m.%Y %H:%M"),
+                "disabled_card": user_disabled_card if int(spot_id) <= 5 else None
+            }
         }
         save_data(parking_spots)
 
-        log_transaction("[💸 CAM_IN]", owner_username, f"AI Kamera: Auto {plate} ienema vietu Nr. {spot_id}", collected_amount)
+        log_transaction("[💸 CAM_IN]", owner_username, f"AI Kamera: Auto {plate} ieņēma vietu Nr. {spot_id}",
+                        collected_amount)
         flash(f'Kamera fiksēja iebraukšanu! Vieta Nr. {spot_id} aizņemta ar {plate}.')
         return redirect('/admin')
 

@@ -39,3 +39,11 @@
 19.10.2026 15:53:28 [💸 CAM_IN]   Lietotājs: serz         | AI Kamera: Auto VR2011 ienema vietu Nr. 14         | Summa:   -2.00 EUR
 19.10.2026 15:54:56 [💸 CAM_IN]   Lietotājs: system       | AI Kamera: Auto FX9999 ienema vietu Nr. 13         | Summa:    0.00 EUR
 19.10.2026 15:55:43 [⚠️ PENALTY] Lietotājs: system       | AI Kamera: Auto FX9999 aizbrauca bez apmaksas! Nosutits CSDD | Summa:   30.00 EUR
+19.10.2026 16:03:05 [🚗 FREE]     Lietotājs: serz         | Atbrīvoja vietu Nr. 14                             | Summa:    0.00 EUR
+20.10.2026 20:07:01 [💸 CAM_IN]   Lietotājs: system       | AI Kamera: Auto ZS5555 ienema vietu Nr. 10         | Summa:    0.00 EUR
+20.10.2026 20:07:50 [⚠️ PENALTY] Lietotājs: system       | AI Kamera: Auto ZS5555 aizbrauca bez apmaksas! Nosutits CSDD | Summa:   30.00 EUR
+20.10.2026 20:08:23 [💸 CAM_IN]   Lietotājs: luka         | AI Kamera: Auto FU1751 ienema vietu Nr. 9          | Summa:   -2.00 EUR
+20.10.2026 20:09:24 [💸 CAM_IN]   Lietotājs: system       | AI Kamera: Auto MK5240 ienema vietu Nr. 9          | Summa:    0.00 EUR
+20.10.2026 20:23:10 [💸 CAM_IN]   Lietotājs: admin        | AI Kamera: Auto VR2010 ienema vietu Nr. 9          | Summa:   -2.00 EUR
+20.10.2026 20:31:26 [💸 CAM_IN]   Lietotājs: system       | AI Kamera: Auto CS1001 ieņēma vietu Nr. 9          | Summa:    0.00 EUR
+20.10.2026 20:37:13 [💸 CAM_IN]   Lietotājs: system       | AI Kamera: Auto DC9876 ieņēma vietu Nr. 9          | Summa:    0.00 EUR

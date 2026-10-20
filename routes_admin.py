@@ -32,6 +32,46 @@ def admin_panel():
         return redirect('/')
 
     # =========================================================================
+    # NEREĢISTRĒTO TRANSPORTLĪDZEKĻU FIKSĀCIJA UN UZSKAITE
+    # СИСТЕМА ФИКСАЦИИ И УЧЕТА НЕЗАРЕГИСТРИРОВАННЫХ МАШИН (ГОСТЕЙ)
+    # =========================================================================
+    spots = load_data()
+    guest_cars_parked = []
+    price_per_hour = 2.0  # Sistēmas pamata tarifs / Базовый тариф системы
+
+    for spot_id, spot_val in spots.items():
+        if isinstance(spot_val, dict) and isinstance(spot_val.get("status"), dict):
+            status_dict = spot_val["status"]
+            plate = status_dict.get("plate", "").strip().upper()
+
+            # Pārbaudām, vai auto numurs ir reģistrēts lietotāju bāzē
+            # Проверяем, зарегистрирован ли номер машины в базе пользователей
+            is_registered = False
+            for udata in all_users.values():
+                if udata.get("plate", "").replace("-", "").strip().upper() == plate.replace("-", "").strip().upper():
+                    is_registered = True
+                    break
+
+            # Ja auto nav reģistrēts, bet vieta ir aizņemta — tas ir viesis
+            # Если машина не зарегистрирована, но место занято — это гость
+            if not is_registered and plate:
+                try:
+                    booked_at_time = datetime.strptime(status_dict["booked_at"], "%d.%m.%Y %H:%M")
+                    time_stayed = datetime.now() - booked_at_time
+                    hours_stayed = int(time_stayed.total_seconds() // 3600) + 1
+                    if hours_stayed <= 0:
+                        hours_stayed = 1
+                except Exception:
+                    hours_stayed = 1
+
+                guest_cars_parked.append({
+                    "spot_id": spot_id,
+                    "plate": plate,
+                    "booked_at": status_dict.get("booked_at"),
+                    "potential_fee": f"{hours_stayed * price_per_hour:.2f}"
+                })
+
+    # =========================================================================
     # 🚀 MEKLĒŠANAS UN PAGINĀCIJAS SISTĒMA (AIZSARDZĪBA LIELAM LIETOTĀJU SKAITAM)
     # 🚀 СИСТЕМА ПОИСКА И ПАГИНАЦИИ (ЗАЩИТА ОТ СЛОВАРЕЙ С СОТНЯМИ ВОДИТЕЛЕЙ)
     # =========================================================================
@@ -104,7 +144,8 @@ def admin_panel():
                 plate = status.get("plate", "???")
                 ends_at_str = status.get("ends_at", "")  # Formāts: "dd.mm.yyyy HH:MM" / Формат: "dd.mm.yyyy HH:MM"
 
-                time_part = ends_at_str.split(" ") if " " in ends_at_str else ends_at_str
+                # Izgūstam tikai laika daļu (HH:MM), nogriežot datumu / Берем только время, отрезая дату
+                time_part = ends_at_str.split(" ")[1] if " " in ends_at_str else ends_at_str
                 display_text = f"{plate} līdz {time_part}"
 
                 # Automašīnas stāvēšanas laika pārkāpuma pārbaudes algoritms attiecībā pret servera laiku
@@ -183,125 +224,164 @@ def admin_panel():
                             continue
         except Exception:
             pass
+        
+        transaction_history.reverse()
+        occupancy = {"regular": reg_occupancy}
 
-    transaction_history.reverse()
-    occupancy = {"regular": reg_occupancy}
+        # =========================================================================
+        # NEREĢISTRĒTO TRANSPORTLĪDZEKĻU FIKSĀCIJA UN UZSKAITE
+        # СИСТЕМА ФИКСАЦИИ И УЧЕТА НЕЗАРЕГИСТРИРОВАННЫХ МАШИН (ГОСТЕЙ)
+        # =========================================================================
+        guest_cars_parked = []
+        price_per_hour = 2.0  # Sistēmas pamata tarifs / Базовый тариф системы
 
-    # Nosūtām paginētos datus un lapu marķierus uz HTML priekšgalu
-    # Отправляем пагинированные данные и маркеры страниц в HTML-фронтенд
-    return render_template('admin.html',
-                           users=paginated_users,
-                           current_page=page,
-                           total_pages=total_pages,
-                           search_query=search_query,
-                           fin=fin_report,
-                           occ=occupancy,
-                           spots=admin_spots_display,
-                           transactions=transaction_history)
+        for spot_id, spot_val in spots.items():
+            if isinstance(spot_val, dict) and isinstance(spot_val.get("status"), dict):
+                status_dict = spot_val["status"]
+                plate = status_dict.get("plate", "").strip().upper()
 
+                # Pārbaudām, vai auto numurs ir reģistrēts lietotāju bāzē
+                # Проверяем, зарегистрирован ли номер машины в базе пользователей
+                is_registered = False
+                for udata in all_users.values():
+                    if udata.get("plate", "").replace("-", "").strip().upper() == plate.replace("-",
+                                                                                                "").strip().upper():
+                        is_registered = True
+                        break
 
-@admin_bp.route('/admin/topup-user', methods=['POST'])
-def admin_topup_user():
-    """
-    Lietotāja bilances piespiedu maiņa no administratora puses
-    Принудительное начисление/списание баланса админом
-    """
-    if "username" not in session:
-        return redirect('/login')
+                # Ja auto nav reģistrēts, bet vieta ir aizņemta — tas ir viesis
+                # Если машина не зарегистрирована, но место занято — это гость
+                if not is_registered and plate:
+                    try:
+                        booked_at_time = datetime.strptime(status_dict["booked_at"], "%d.%m.%Y %H:%M")
+                        time_stayed = datetime.now() - booked_at_time
+                        hours_stayed = int(time_stayed.total_seconds() // 3600) + 1
+                        if hours_stayed <= 0:
+                            hours_stayed = 1
+                    except Exception:
+                        hours_stayed = 1
 
-    users = load_users()
-    if not users.get(session["username"], {}).get("is_admin", False):
-        flash('Kļūda: Piekļuve liegta!')
-        return redirect('/')
+                    guest_cars_parked.append({
+                        "spot_id": spot_id,
+                        "plate": plate,
+                        "booked_at": status_dict.get("booked_at"),
+                        "potential_fee": f"{hours_stayed * price_per_hour:.2f}"
+                    })
+        # =========================================================================
 
-    target_user = request.form.get("target_user", "").strip().lower()
-    try:
-        bonus_amount = float(request.form.get("amount", 0))
-    except ValueError:
-        flash('Kļūda: Nepareizs summas formāts!')
+        # Nosūtām paginētos datus, lapu marķierus un viesu sarakstu uz HTML priekšgalu
+        # Отправляем пагинированные данные, маркеры страниц и список гостей в HTML-фронтенд
+        return render_template('admin.html',
+                               users=paginated_users,
+                               current_page=page,
+                               total_pages=total_pages,
+                               search_query=search_query,
+                               fin=fin_report,
+                               occ=occupancy,
+                               spots=admin_spots_display,
+                               transactions=transaction_history,
+                               guest_cars=guest_cars_parked)
+
+    @admin_bp.route('/admin/topup-user', methods=['POST'])
+    def admin_topup_user():
+        """
+        Lietotāja bilances piespiedu maiņa no administratora puses
+        Принудительное начисление/списание баланса админом
+        """
+        if "username" not in session:
+            return redirect('/login')
+
+        users = load_users()
+        if not users.get(session["username"], {}).get("is_admin", False):
+            flash('Kļūda: Piekļuve liegta!')
+            return redirect('/')
+
+        target_user = request.form.get("target_user", "").strip().lower()
+        try:
+            bonus_amount = float(request.form.get("amount", 0))
+        except ValueError:
+            flash('Kļūda: Nepareizs summas formāts!')
+            return redirect('/admin')
+
+        if target_user in users:
+            users[target_user]["balance"] = round(users[target_user].get("balance", 0.0) + bonus_amount, 2)
+            save_users(users)
+
+            sign = f"+{bonus_amount:.2f}" if bonus_amount >= 0 else f"{bonus_amount:.2f}"
+            log_transaction("[💳 TOPUP]", target_user, f"Admin ({session['username']}) mainīja bilanci", sign)
+
+            flash(f'Lietotāja {target_user} balanss mainīts par {bonus_amount:.2f} EUR!')
+            return redirect('/admin')
+
+        flash('Kļūda: Lietotājs nav atrasts!')
         return redirect('/admin')
 
-    if target_user in users:
-        users[target_user]["balance"] = round(users[target_user].get("balance", 0.0) + bonus_amount, 2)
-        save_users(users)
+    @admin_bp.route('/admin/clear-spot/<spot_id>', methods=['POST'])
+    def admin_clear_spot(spot_id):
+        """
+        Operatīva automašīnas evakuācija no administratora puses ar žurnalēšanu
+        Экстренная эвакуация машины администратором с логированием
+        """
+        if "username" not in session:
+            return redirect('/login')
 
-        sign = f"+{bonus_amount:.2f}" if bonus_amount >= 0 else f"{bonus_amount:.2f}"
-        log_transaction("[💳 TOPUP]", target_user, f"Admin ({session['username']}) mainīja bilanci", sign)
+        users = load_users()
+        if not users.get(session["username"], {}).get("is_admin", False):
+            flash('Kļūda: Piekļuve liegta!')
+            return redirect('/')
 
-        flash(f'Lietotāja {target_user} balanss mainīts par {bonus_amount:.2f} EUR!')
+        spots = load_data()
+        if spot_id in spots:
+            old_status = spots[spot_id].get("status") if isinstance(spots[spot_id], dict) else spots[spot_id]
+            plate_info = "Nezināms"
+
+            # Droši izgūstam valsts numura zīmi
+            # Безопасно извлекаем госномер
+            if isinstance(old_status, dict):
+                plate_info = old_status.get("plate", "Nezināms")
+            elif isinstance(old_status, str):
+                plate_info = old_status
+
+            # Atiestatām stāvvietas statusu
+            # Сбрасываем статус места парковки
+            if isinstance(spots[spot_id], dict):
+                spots[spot_id]["status"] = True
+            else:
+                spots[spot_id] = True
+
+            save_data(spots)
+
+            # Reģistrējam darbību sistēmas žurnālā
+            # Записываем действие в лог
+            log_transaction("[⚠️ PENALTY]", "admin",
+                            f"Piespiedu evakuācija no vietas Nr. {spot_id} (Auto: {plate_info})", "0.00")
+
+            flash(f'Vieta Nr. {spot_id} veiksmīgi atbrīvota piespiedu kārtā!')
+            return redirect('/admin')
+
+        flash('Kļūda: Šāda vieta neeksistē!')
         return redirect('/admin')
 
-    flash('Kļūda: Lietotājs nav atrasts!')
-    return redirect('/admin')
+    @admin_bp.route('/admin/export')
+    def admin_export_report():
+        """
+        Darījumu vēstures faila lejupielāde tieši no administratora paneļa
+        Скачивание файла истории транзакций напрямую из админки
+        """
+        if "username" not in session:
+            return redirect('/login')
 
+        users = load_users()
+        if not users.get(session["username"], {}).get("is_admin", False):
+            flash('Kļūda: Piekļuve liegta!')
+            return redirect('/')
 
-@admin_bp.route('/admin/clear-spot/<spot_id>', methods=['POST'])
-def admin_clear_spot(spot_id):
-    """
-    Operatīva automašīnas evakuācija no administratora puses ar žurnalēšanu
-    Экстренная эвакуация машины администратором с логированием
-    """
-    if "username" not in session:
-        return redirect('/login')
+        # Pārbaudām faila fizisko eksistenci uz disка
+        # Проверяем физическое наличие файла на диске
+        if os.path.exists("transactions.txt"):
+            return send_file("transactions.txt", as_attachment=True, download_name="parking_transactions.txt")
 
-    users = load_users()
-    if not users.get(session["username"], {}).get("is_admin", False):
-        flash('Kļūda: Piekļuve liegta!')
-        return redirect('/')
-
-    spots = load_data()
-    if spot_id in spots:
-        old_status = spots[spot_id].get("status") if isinstance(spots[spot_id], dict) else spots[spot_id]
-        plate_info = "Nezināms"
-
-        # Droši izgūstam valsts numura zīmi
-        # Безопасно извлекаем госномер
-        if isinstance(old_status, dict):
-            plate_info = old_status.get("plate", "Nezināms")
-        elif isinstance(old_status, str):
-            plate_info = old_status
-
-        # Atiestatām stāvvietas statusu
-        # Сбрасываем статус места парковки
-        if isinstance(spots[spot_id], dict):
-            spots[spot_id]["status"] = True
-        else:
-            spots[spot_id] = True
-
-        save_data(spots)
-
-        # Reģistrējam darbību sistēmas žurnālā
-        # Записываем действие в лог
-        log_transaction("[⚠️ PENALTY]", "admin",
-                        f"Piespiedu evakuācija no vietas Nr. {spot_id} (Auto: {plate_info})", "0.00")
-
-        flash(f'Vieta Nr. {spot_id} veiksmīgi atbrīvota piespiedu kārtā!')
+        # Kļūda: Žurnāli ir tukši!
+        # Ошибка: Логи пустые!
+        flash('Kļūda: Žurnāli ir tukši!')
         return redirect('/admin')
-
-    flash('Kļūda: Šāda vieta neeksistē!')
-    return redirect('/admin')
-
-
-@admin_bp.route('/admin/export')
-def admin_export_report():
-    """
-    Darījumu vēstures faila lejupielāde tieši no administratora paneļa
-    Скачивание файла истории транзакций напрямую из админки
-    """
-    if "username" not in session:
-        return redirect('/login')
-
-    users = load_users()
-    if not users.get(session["username"], {}).get("is_admin", False):
-        flash('Kļūda: Piekļuve liegta!')
-        return redirect('/')
-
-    # Pārbaudām faila fizisko eksistenci uz diska
-    # Проверяем физическое наличие файла на диске
-    if os.path.exists("transactions.txt"):
-        return send_file("transactions.txt", as_attachment=True, download_name="parking_transactions.txt")
-
-    # Klūda: Žurnāli ir tukši!
-    # Ошибка: Логи пустые!
-    flash('Kļūda: Žurnāli ir tukši!')
-    return redirect('/admin')
