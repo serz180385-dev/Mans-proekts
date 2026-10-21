@@ -47,3 +47,7 @@
 20.10.2026 20:23:10 [💸 CAM_IN]   Lietotājs: admin        | AI Kamera: Auto VR2010 ienema vietu Nr. 9          | Summa:   -2.00 EUR
 20.10.2026 20:31:26 [💸 CAM_IN]   Lietotājs: system       | AI Kamera: Auto CS1001 ieņēma vietu Nr. 9          | Summa:    0.00 EUR
 20.10.2026 20:37:13 [💸 CAM_IN]   Lietotājs: system       | AI Kamera: Auto DC9876 ieņēma vietu Nr. 9          | Summa:    0.00 EUR
+20.10.2026 21:33:33 [💸 CAM_IN]   Lietotājs: system       | AI Kamera: Auto OS7582 ieņēma vietu Nr. 11         | Summa:    0.00 EUR
+21.10.2026 15:20:34 [💳 TOPUP]    Lietotājs: luka         | Admin (admin) mainīja bilanci                      | Summa:   +2.00 EUR
+21.10.2026 15:52:33 [💳 TOPUP]    Lietotājs: zanna        | Admin (admin) mainīja bilanci                      | Summa:   +5.00 EUR
+21.10.2026 15:53:00 [⚠️ PENALTY] Lietotājs: system       | AI Kamera: Auto DC9876 aizbrauca bez apmaksas! Nosutits CSDD | Summa:   30.00 EUR

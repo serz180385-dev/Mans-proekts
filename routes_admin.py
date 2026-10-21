@@ -282,39 +282,6 @@ def admin_panel():
                                transactions=transaction_history,
                                guest_cars=guest_cars_parked)
 
-    @admin_bp.route('/admin/topup-user', methods=['POST'])
-    def admin_topup_user():
-        """
-        Lietotāja bilances piespiedu maiņa no administratora puses
-        Принудительное начисление/списание баланса админом
-        """
-        if "username" not in session:
-            return redirect('/login')
-
-        users = load_users()
-        if not users.get(session["username"], {}).get("is_admin", False):
-            flash('Kļūda: Piekļuve liegta!')
-            return redirect('/')
-
-        target_user = request.form.get("target_user", "").strip().lower()
-        try:
-            bonus_amount = float(request.form.get("amount", 0))
-        except ValueError:
-            flash('Kļūda: Nepareizs summas formāts!')
-            return redirect('/admin')
-
-        if target_user in users:
-            users[target_user]["balance"] = round(users[target_user].get("balance", 0.0) + bonus_amount, 2)
-            save_users(users)
-
-            sign = f"+{bonus_amount:.2f}" if bonus_amount >= 0 else f"{bonus_amount:.2f}"
-            log_transaction("[💳 TOPUP]", target_user, f"Admin ({session['username']}) mainīja bilanci", sign)
-
-            flash(f'Lietotāja {target_user} balanss mainīts par {bonus_amount:.2f} EUR!')
-            return redirect('/admin')
-
-        flash('Kļūda: Lietotājs nav atrasts!')
-        return redirect('/admin')
 
     @admin_bp.route('/admin/clear-spot/<spot_id>', methods=['POST'])
     def admin_clear_spot(spot_id):

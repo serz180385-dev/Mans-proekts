@@ -1,7 +1,7 @@
 import re
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, session, url_for, flash
-from database import load_data, load_users
+from database import load_data, load_users, save_users  # Pievienots save_users / Добавлено save_users
 
 app = Flask(__name__)
 app.secret_key = "super_secret_parking_key"
@@ -80,8 +80,6 @@ def home():
             f"plkst. {earliest_time.strftime('%H:%M')}."
         )
 
-    # Izņemts msg=request.args.get('msg') jaunās flash sistēmas atbalstam
-    # Удален msg=request.args.get('msg') для поддержки новой системы flash
     return render_template('index.html', spots=spots, current_plate=current_plate,
                            current_balance=current_balance, next_free_info=next_free_info,
                            is_admin=is_admin)
@@ -96,6 +94,44 @@ def logout():
     session.clear()
     # Pārvirzām uz autorizācijas lapu / Перенаправляем на страницу входа
     return redirect('/login')
+
+# =========================================================================
+# PIEVIENOTS: Globālais maršruts lietotāja bilances maiņai administratora panelī
+# ДОБАВЛЕНО: Глобальный маршрут изменения баланса пользователя в админке
+# =========================================================================
+@app.route('/topup-user', methods=['POST'])
+def admin_topup_user():
+    """
+    Lietotāja bilances piespiedu maiņa no administratora puses
+    Принудительное начисление/списание баланса админом
+    """
+    if "username" not in session:
+        return redirect('/login')
+
+    users = load_users()
+    if not users.get(session["username"], {}).get("is_admin", False):
+        flash('Kļūda: Piekļuve liegta!')
+        return redirect('/')
+
+    target_user = request.form.get("target_user", "").strip().lower()
+    try:
+        bonus_amount = float(request.form.get("amount", 0))
+    except ValueError:
+        flash('Kļūda: Nepareizs summas formāts!')
+        return redirect('/admin')
+
+    if target_user in users:
+        users[target_user]["balance"] = round(users[target_user].get("balance", 0.0) + bonus_amount, 2)
+        save_users(users)
+
+        sign = f"+{bonus_amount:.2f}" if bonus_amount >= 0 else f"{bonus_amount:.2f}"
+        log_transaction("[💳 TOPUP]", target_user, f"Admin ({session['username']}) mainīja bilanci", sign)
+
+        flash(f'Lietotāja {target_user} balanss mainīts par {bonus_amount:.2f} EUR!')
+        return redirect('/admin')
+
+    flash('Kļūda: Lietotājs nav atrasts!')
+    return redirect('/admin')
 
 if __name__ == '__main__':
     app.run(debug=True)
