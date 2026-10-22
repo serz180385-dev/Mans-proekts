@@ -1,10 +1,12 @@
 import re
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, session, url_for, flash
-from database import load_data, load_users, save_users  # Pievienots save_users / Добавлено save_users
+# Pievienots send_file failu lejupielādes atbalstam / Добавлено send_file для поддержки скачивания файлов
+from flask import Flask, render_template, request, redirect, session, url_for, flash, send_file
+from database import load_data, save_data, load_users, save_users  # Pievienots save_users / Добавлено save_users
 
 app = Flask(__name__)
 app.secret_key = "super_secret_parking_key"
+
 
 def log_transaction(tag, user, details, amount_str):
     """
@@ -21,6 +23,7 @@ def log_transaction(tag, user, details, amount_str):
     except Exception:
         pass
 
+
 # ATSLODZES MODUĻU REĢISTRĀCIJA (Importējam pēc žurnāla deklarēšanas)
 # РЕГИСТРАЦИЯ МОДУЛЕЙ-РАЗГРУЗЧИКОВ (Импортируем после объявления лога)
 from routes_driver import driver_bp
@@ -30,6 +33,7 @@ from routes_emulator import emulator_bp
 app.register_blueprint(driver_bp)
 app.register_blueprint(admin_bp)
 app.register_blueprint(emulator_bp)
+
 
 @app.route('/')
 def home():
@@ -84,6 +88,7 @@ def home():
                            current_balance=current_balance, next_free_info=next_free_info,
                            is_admin=is_admin)
 
+
 @app.route('/logout')
 def logout():
     """
@@ -94,6 +99,7 @@ def logout():
     session.clear()
     # Pārvirzām uz autorizācijas lapu / Перенаправляем на страницу входа
     return redirect('/login')
+
 
 # =========================================================================
 # PIEVIENOTS: Globālais maršruts lietotāja bilances maiņai administratora panelī
@@ -117,7 +123,7 @@ def admin_topup_user():
     try:
         bonus_amount = float(request.form.get("amount", 0))
     except ValueError:
-        flash('Kļūda: Nepareizs summas formāts!')
+        flash('Kļūda: Nepareizs summas formāфts!')
         return redirect('/admin')
 
     if target_user in users:
@@ -132,6 +138,95 @@ def admin_topup_user():
 
     flash('Kļūda: Lietotājs nav atrasts!')
     return redirect('/admin')
+
+
+# =========================================================================
+# PIEVIENOTS: Viesu piespiedu sodīšanas un CSDD datu nosūtīšanas maršruts
+# ДОБАВЛЕНО: Маршрут принудительного штрафования гостей и отправки данных в CSDD
+# =========================================================================
+@app.route('/admin/guest-penalty/<spot_id>', methods=['POST'])
+def admin_guest_penalty(spot_id):
+    """
+    Administratīvapārkāpuma akta sastādīšana viesim ar stundu maksas un fiksētā soda summēšanu
+    Составление акта правонарушения гостю со складыванием платы за часы и фиксированного штрафа
+    """
+    if "username" not in session:
+        return redirect('/login')
+
+    users = load_users()
+    if not users.get(session["username"], {}).get("is_admin", False):
+        flash('Kļūda: Piekļuve liegta!')
+        return redirect('/')
+
+    spots = load_data()
+    if spot_id in spots:
+        plate = request.form.get("plate", "Nezināms").strip().upper()
+
+        # Izgūstam stundu maksu no formas un droši konvertējam par skaitli
+        # Извлекаем плату за часы из формы и безопасно конвертируем в число
+        try:
+            hours_fee = float(request.form.get("potential_fee", "0.00"))
+        except ValueError:
+            hours_fee = 0.0
+
+        # KOMBINĒTAIS SODS: 30.00 EUR pamata sods + sakrājusies stundu maksa
+        # КОМБИНИРОВАННЫЙ ШТРАФ: 30.00 EUR базовый штраф + набежавшая плата за часы
+        base_penalty = 30.00
+        total_penalty_calculated = base_penalty + hours_fee
+
+        # Atbrīvojam vietu, saglabājot zonējuma tipu
+        if isinstance(spots[spot_id], dict):
+            spots[spot_id]["status"] = True
+        else:
+            spot_id_int = int(spot_id)
+            s_type = "disabled" if spot_id_int <= 5 else ("ev" if spot_id_int > 20 else "regular")
+            spots[spot_id] = {"status": True, "type": s_type}
+
+        save_data(spots)
+
+        # Žurnalējam pilno aprēķināto summu, lai tā korekti pieskaitītos finanšu skaitītājam
+        # Логируем полную рассчитанную сумму, чтобы она корректно прибавилась к финансовому счетчику
+        penalty_str = f"{total_penalty_calculated:.2f}"
+        log_transaction("[⚠️ PENALTY]", "system",
+                        f"Dispečers: Auto {plate} izrakstīts protokols (Sods+Stundas) vietā Nr. {spot_id}", penalty_str)
+
+        flash(
+            f'Pārkāpuma akts auto {plate} reģistrēts! Sods {base_penalty:.2f} EUR + stāvvietas maksa {hours_fee:.2f} EUR (Kopā: {penalty_str} EUR) nosūtīts uz CSDD.')
+        return redirect('/admin')
+
+    flash('Kļūda: Šāda vieta neeksistē!')
+    return redirect('/admin')
+
+
+# =========================================================================
+# PIEVIENOTS: Globālais maršruts finanšu atskaiņu eksportēšanai failā .txt
+# ДОБАВЛЕНО: Глобальный маршрут экспорта финансовых отчетов в файл .txt
+# =========================================================================
+@app.route('/admin/export')
+def admin_export_report():
+    """
+    Darījumu vēstures faila lejupielāde tieši no administratora paneļa
+    Скачивание файла истории транзакций напрямую из админки
+    """
+    import os
+    if "username" not in session:
+        return redirect('/login')
+
+    users = load_users()
+    if not users.get(session["username"], {}).get("is_admin", False):
+        flash('Kļūda: Piekļuve liegta!')
+        return redirect('/')
+
+    # Pārbaudām faila fizisko eksistenci uz diska
+    # Проверяем физическое наличие файла на диске
+    if os.path.exists("transactions.txt"):
+        return send_file("transactions.txt", as_attachment=True, download_name="parking_transactions.txt")
+
+    # Kļūda: Žurnāli ir tukši!
+    # Ошибка: Логи пустые!
+    flash('Kļūda: Žurnāli ir tukši!')
+    return redirect('/admin')
+
 
 if __name__ == '__main__':
     app.run(debug=True)

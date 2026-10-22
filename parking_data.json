@@ -41,22 +41,15 @@
     },
     "11": {
         "type": "regular",
-        "status": {
-            "plate": "OS7582",
-            "booked_at": "20.10.2026 21:33",
-            "duration_hours": 19,
-            "ends_at": "21.10.2026 16:33",
-            "disabled_card": null,
-            "is_extended": true
-        }
+        "status": true
     },
     "12": {
         "status": true,
         "type": "regular"
     },
     "13": {
-        "status": true,
-        "type": "regular"
+        "type": "regular",
+        "status": true
     },
     "14": {
         "status": true,

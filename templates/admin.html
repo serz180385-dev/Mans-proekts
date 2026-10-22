@@ -537,35 +537,51 @@
                 </div>
             </div> <!-- / Закрыли карточку логов ( transactions ) -->
 
-            <!-- ========================================================================= -->
-            <!-- NEREĢISTRĒTO TRANSPORTLĪDZEKĻU FIKSĀCIJA UN UZSKAITE (PIEVIENOTS) -->
-            <!-- СИСТЕМА ФИКСАЦИИ И УЧЕТА НЕЗАРЕГИСТРИРОВАННЫХ МАШИН (ГОСТЕЙ) -->
+           <!-- ========================================================================= -->
+            <!-- NEREĢISTRĒTO TRANSPORTLĪDZEKĻU UZSKAITE UN FINANŠU KONTROLE -->
+            <!-- УЧЕТ И ФИНАНСОВЫЙ КОНТРОЛЬ НЕЗАРЕГИСТРИРОВАННЫХ МАШИН -->
             <!-- ========================================================================= -->
             <div class="card" style="margin-top: 20px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                <h3 style="color: #0f172a; font-size: 16px; font-weight: 700; margin-bottom: 5px; margin-top: 0;">📋 Nereģistrēto transportlīdzekļu uzskaite</h3>
-                <p style="font-size: 12px; color: #64748b; margin-bottom: 15px; margin-top: 0;">Aktīvās viesu sesijas, ko fiksējusi AI kamera (Kontrole pirms CSDD soda)</p>
+                <h3 style="color: #0f172a; font-size: 16px; font-weight: 700; margin-bottom: 5px; margin-top: 0;">📋 Viesu uzskaite un parādi</h3>
+                <p style="font-size: 12px; color: #64748b; margin-bottom: 15px; margin-top: 0;">Nereģistrēto transportlīdzekļu pēcapmaksas kontrole reālajā laikā</p>
 
                 <div style="overflow-x: auto;">
-                    <table>
+                    <table class="table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
                         <thead>
                             <tr style="border-bottom: 2px solid #edf2f7; text-align: left; color: #718096; font-size: 13px;">
                                 <th style="padding: 8px 4px;">Vieta</th>
                                 <th style="padding: 8px 4px;">Auto Numurs</th>
                                 <th style="padding: 8px 4px;">Iebraukšanas laiks</th>
-                                <th style="padding: 8px 4px; text-align: right;">Potenciālā maksa</th>
+                                <th style="padding: 8px 4px; text-align: center;">Laiks (st.)</th>
+                                <th style="padding: 8px 4px; text-align: right;">Aktuālais parāds</th>
+                                <th style="padding: 8px 4px; text-align: right;">Darbības</th>
                             </tr>
                         </thead>
                         <tbody style="font-size: 13px;">
                             {% for guest in guest_cars %}
                                 <tr style="border-bottom: 1px solid #edf2f7;">
                                     <td style="padding: 10px 4px;"><span class="badge" style="background: #f1f5f9; color: #0f172a; font-weight: 700; padding: 2px 6px; border-radius: 4px;">Nr. {{ guest.spot_id }}</span></td>
-                                    <td style="padding: 10px 4px;"><strong style="color: #c2410c;">{{ guest.plate }}</strong></td>
+                                    <td style="padding: 10px 4px;"><strong style="color: #c2410c; font-family: monospace; font-size: 14px;">{{ guest.plate }}</strong></td>
                                     <td style="padding: 10px 4px; color: #4a5568;">{{ guest.booked_at }}</td>
-                                    <td style="padding: 10px 4px; text-align: right;"><span style="font-weight: 700; color: #b91c1c;">{{ guest.potential_fee }} EUR</span></td>
+                                    <td style="padding: 10px 4px; text-align: center; font-weight: 600; color: #4a5568;">{{ guest.hours_stayed }} st.</td>
+                                    <td style="padding: 10px 4px; text-align: right;"><span style="font-weight: 700; color: #b91c1c; background: #fef2f2; padding: 4px 8px; border-radius: 6px; border: 1px solid #fee2e2;">{{ guest.debt_amount }} €</span></td>
+
+                                    <!-- Кнопка выписывания штрафа и отправки в CSDD -->
+                                    <td style="padding: 10px 4px; text-align: right;">
+                                        <form method="POST" action="/admin/guest-penalty/{{ guest.spot_id }}" style="margin: 0; display: inline-block;" onsubmit="return confirm('Vai tiešām vēlaties sastādīt pārkāpuma aktu un nosūtīt datus uz CSDD?')">
+                                            <input type="hidden" name="plate" value="{{ guest.plate }}">
+                                            <!-- PIEVIENOTS: Nododam uzkrāto stundu maksu uz aizmugursistēmu kombinētā soda aprēķinam -->
+                                            <!-- ДОБАВЛЕНО: Передаем набежавшую плату за часы на бэкенд для расчета комбинированного штрафа -->
+                                            <input type="hidden" name="potential_fee" value="{{ guest.debt_amount }}">
+                                            <button type="submit" class="btn" style="background: #fee2e2; color: #b91c1c; font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 6px; border: 1px solid #fca5a5; cursor: pointer; transition: all 0.15s;" onmouseover="this.style.backgroundColor='#fecaca'" onmouseout="this.style.backgroundColor='#fee2e2'">
+                                                ⚖️ Nosūtīt uz CSDD
+                                            </button>
+                                        </form>
+                                    </td>
                                 </tr>
                             {% else %}
                                 <tr>
-                                    <td colspan="4" style="text-align: center; color: #94a3b8; padding: 20px 0; font-weight: 600;">Šobrīd stāvvietā nav nereģistrēto viesu auto.</td>
+                                    <td colspan="6" style="text-align: center; color: #94a3b8; padding: 25px 0; font-weight: 600;">Šobrīd stāvvietā nav aktīvu viesu sesiju. Parādu nav.</td>
                                 </tr>
                             {% endfor %}
                         </tbody>

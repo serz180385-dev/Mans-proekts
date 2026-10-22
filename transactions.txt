@@ -51,3 +51,6 @@
 21.10.2026 15:20:34 [💳 TOPUP]    Lietotājs: luka         | Admin (admin) mainīja bilanci                      | Summa:   +2.00 EUR
 21.10.2026 15:52:33 [💳 TOPUP]    Lietotājs: zanna        | Admin (admin) mainīja bilanci                      | Summa:   +5.00 EUR
 21.10.2026 15:53:00 [⚠️ PENALTY] Lietotājs: system       | AI Kamera: Auto DC9876 aizbrauca bez apmaksas! Nosutits CSDD | Summa:   30.00 EUR
+22.10.2026 15:54:42 [⚠️ PENALTY] Lietotājs: system       | Dispečers: Auto OS7582 izrakstīts protokols vietā Nr. 11 | Summa:   30.00 EUR
+22.10.2026 16:09:08 [💸 CAM_IN]   Lietotājs: system       | AI Kamera: Auto MC7777 ieņēma vietu Nr. 13         | Summa:    0.00 EUR
+22.10.2026 16:09:17 [⚠️ PENALTY] Lietotājs: system       | Dispečers: Auto MC7777 izrakstīts protokols (Sods+Stundas) vietā Nr. 13 | Summa:   32.00 EUR

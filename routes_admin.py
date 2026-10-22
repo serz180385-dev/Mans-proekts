@@ -229,11 +229,12 @@ def admin_panel():
         occupancy = {"regular": reg_occupancy}
 
         # =========================================================================
-        # NEREĢISTRĒTO TRANSPORTLĪDZEKĻU FIKSĀCIJA UN UZSKAITE
-        # СИСТЕМА ФИКСАЦИИ И УЧЕТА НЕЗАРЕГИСТРИРОВАННЫХ МАШИН (ГОСТЕЙ)
+        # NEREĢISTRĒTO VIESU PARĀDU UN ATSKAIŠU SISTĒMA (ATJAUNINĀTS)
+        # СИСТЕМА УЧЕТА ДОЛГОВ И ОТЧЕТОВ НЕЗАРЕГИСТРИРОВАННЫХ ГОСТЕЙ (ОБНОВЛЕНО)
         # =========================================================================
+        spots = load_data()
         guest_cars_parked = []
-        price_per_hour = 2.0  # Sistēmas pamata tarifs / Базовый тариф системы
+        price_per_hour = 2.0  # Tarifu konstante / Константа тарифа
 
         for spot_id, spot_val in spots.items():
             if isinstance(spot_val, dict) and isinstance(spot_val.get("status"), dict):
@@ -249,23 +250,31 @@ def admin_panel():
                         is_registered = True
                         break
 
-                # Ja auto nav reģistrēts, bet vieta ir aizņemta — tas ir viesis
-                # Если машина не зарегистрирована, но место занято — это гость
+                # Ja auto nav reģistrēts — tas ir viesis, kuram jārēķina parāds
+                # Если машина не зарегистрирована — это гость, которому нужно считать долг
                 if not is_registered and plate:
                     try:
                         booked_at_time = datetime.strptime(status_dict["booked_at"], "%d.%m.%Y %H:%M")
                         time_stayed = datetime.now() - booked_at_time
+
+                        # Aprēķinām pilno stundu skaitu (pat ja stāvējis 1 minūti, jāmaksā par pilnu stundu)
+                        # Считаем количество полных часов (даже если стоял 1 минуту, платит за полный час)
                         hours_stayed = int(time_stayed.total_seconds() // 3600) + 1
                         if hours_stayed <= 0:
                             hours_stayed = 1
                     except Exception:
                         hours_stayed = 1
 
+                    # Aprēķinām aktuālo parāda summu reālajā laikā
+                    # Рассчитываем актуальную сумму долга в реальном времени
+                    total_debt = hours_stayed * price_per_hour
+
                     guest_cars_parked.append({
                         "spot_id": spot_id,
                         "plate": plate,
                         "booked_at": status_dict.get("booked_at"),
-                        "potential_fee": f"{hours_stayed * price_per_hour:.2f}"
+                        "hours_stayed": hours_stayed,
+                        "debt_amount": f"{total_debt:.2f}"
                     })
         # =========================================================================
 
@@ -327,28 +336,4 @@ def admin_panel():
             return redirect('/admin')
 
         flash('Kļūda: Šāda vieta neeksistē!')
-        return redirect('/admin')
-
-    @admin_bp.route('/admin/export')
-    def admin_export_report():
-        """
-        Darījumu vēstures faila lejupielāde tieši no administratora paneļa
-        Скачивание файла истории транзакций напрямую из админки
-        """
-        if "username" not in session:
-            return redirect('/login')
-
-        users = load_users()
-        if not users.get(session["username"], {}).get("is_admin", False):
-            flash('Kļūda: Piekļuve liegta!')
-            return redirect('/')
-
-        # Pārbaudām faila fizisko eksistenci uz disка
-        # Проверяем физическое наличие файла на диске
-        if os.path.exists("transactions.txt"):
-            return send_file("transactions.txt", as_attachment=True, download_name="parking_transactions.txt")
-
-        # Kļūda: Žurnāli ir tukši!
-        # Ошибка: Логи пустые!
-        flash('Kļūda: Žurnāli ir tukši!')
         return redirect('/admin')
